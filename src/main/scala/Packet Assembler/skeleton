@@ -1,0 +1,16 @@
+class Assembler extends Module {
+  val io = IO(new Bundle {
+    val tx_dma_data = Input(UInt(3.W))
+    val tx_rf_data = Input(UInt(3.W))
+    val tx_trigger = Input(UInt(1.W))
+    val tx_load_AA = Input(UInt(1.W))
+    val tx_dma_valid = Input(UInt(1.W))
+    val tx_send_ready = Input(UInt(1.W))
+      
+    val tx_send_data = Output(UInt(3.W))      
+    val tx_dma_ready = Output(UInt(1.W))
+    val tx_send_valid = Output(UInt(1.W))
+    val tx_done = Output(UInt(1.W))
+  })
+  io.out := io.in
+}
