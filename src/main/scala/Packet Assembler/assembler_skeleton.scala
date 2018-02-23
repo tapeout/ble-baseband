@@ -1,4 +1,4 @@
-class Assembler extends Module {
+/*class Assembler extends Module {
   val io = IO(new Bundle {
 	//DMA, REG
     val DMA_Trigger_i = Input(Bool())
@@ -350,4 +350,4 @@ class DisAssembler extends Module {
     val rx_receive_ready = Output(UInt(1.W))
   })
   io.out := io.in
-}
+}*/
