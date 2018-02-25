@@ -39,68 +39,68 @@ step(1)
 
    poke(c.io.operand.bits, "b1".U)
    poke(c.io.operand.valid,true.B)
-   step(1)
 
    expect(c.io.result.bits, "b0"U)
    expect(c.io.result.valid, true.B)
+   step(1)
 
    poke(c.io.operand.bits, "b0".U)
    poke(c.io.operand.valid,true.B)
 
-   step(1)
    expect(c.io.result.bits, "b1"U)
    expect(c.io.result.valid, true.B)
+
+   step(1)
+   poke(c.io.operand.bits, "b0".U)
+   poke(c.io.operand.valid,true.B)
+
+   expect(c.io.result.bits, "b1"U)
+   expect(c.io.result.valid, true.B)
+
+   step(1)
+   poke(c.io.operand.bits, "b0".U)
+   poke(c.io.operand.valid,true.B)
+
+   expect(c.io.result.bits, "b0"U)
+   expect(c.io.result.valid, true.B)
+
+   step(1)
 
    poke(c.io.operand.bits, "b0".U)
    poke(c.io.operand.valid,true.B)
 
+   expect(c.io.result.bits, "b0"U)
+   expect(c.io.result.valid, true.B)
+
    step(1)
+   poke(c.io.operand.bits, "b1".U)
+   poke(c.io.operand.valid,true.B)
+
+
    expect(c.io.result.bits, "b1"U)
    expect(c.io.result.valid, true.B)
 
+   step(1)
    poke(c.io.operand.bits, "b0".U)
    poke(c.io.operand.valid,true.B)
 
-   step(1)
-   expect(c.io.result.bits, "b0"U)
-   expect(c.io.result.valid, true.B)
-
-
-poke(c.io.operand.bits, "b0".U)
-   poke(c.io.operand.valid,true.B)
-
-   step(1)
-   expect(c.io.result.bits, "b0"U)
-   expect(c.io.result.valid, true.B)
-
-poke(c.io.operand.bits, "b1".U)
-   poke(c.io.operand.valid,true.B)
-
-
-   step(1)
    expect(c.io.result.bits, "b1"U)
    expect(c.io.result.valid, true.B)
 
-poke(c.io.operand.bits, "b0".U)
+   step(1)
+   poke(c.io.operand.bits, "b1".U)
    poke(c.io.operand.valid,true.B)
 
-   step(1)
-   expect(c.io.result.bits, "b1"U)
-   expect(c.io.result.valid, true.B)
-
-poke(c.io.operand.bits, "b1".U)
-   poke(c.io.operand.valid,true.B)
-
-   step(1)
    expect(c.io.result.bits, "b0"U)
    expect(c.io.result.valid, true.B)
 
-poke(c.io.operand.valid,false.B)
+   step(1)
+   poke(c.io.operand.valid,false.B)
 
-  step(1)
    expect(c.io.result.valid, false.B)
 
    step(2)
+   
 /*
    while (peek(c.io.operand.ready) == BigInt(0)) {             // wait for the Whitening module is ready to take next byte of data
       step(1)
