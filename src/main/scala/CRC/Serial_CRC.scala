@@ -91,7 +91,7 @@ class Serial_CRC extends Module {
 	    // LFSR follows the Figure 3.3 of BLE spec version 5.0 vol 6
       // position 0 (left most) is represented by lfsr[23]
       // position 23 (right most) is represented by lfsr[0]
-      lfsr := Cat(inv, lfsr(23)^inv, lfsr(22),lfsr(21)^inv,lfsr(20),lfsr(19),lfsr(18)^inv, lfsr(17), 
+      lfsr := Cat(inv, lfsr(23)^inv, lfsr(22),lfsr(21)^inv,lfsr(20)^inv,lfsr(19),lfsr(18)^inv, lfsr(17), 
         lfsr(16),lfsr(15)^inv,lfsr(14)^inv,lfsr(13),lfsr(12),lfsr(11),lfsr(10),lfsr(9),lfsr(8), 
         lfsr(7), lfsr(6),lfsr(5),lfsr(4),lfsr(3),lfsr(2),lfsr(1))
 
