@@ -1,5 +1,6 @@
 package Whitening_test
 
+import SoftwareGoldenModel._
 import Whitening._
 import chisel3._
 import chisel3.util._
@@ -8,14 +9,43 @@ import chisel3.iotesters.{PeekPokeTester, Driver, ChiselFlatSpec}
 
 class WhiteningTests(c: Whitening) extends PeekPokeTester(c) {
 
+   val goldenModel = new SoftwareGoldenModel()
+
+   var init_seed = "1111111"
    poke(c.io.init,true.B)
-   poke(c.io.seed,"b1111111".U)
+   poke(c.io.seed,init_seed.toInt)
+   
+   var init_res = goldenModel.Whitening_sw(true,0,init_seed)
+   var out = init_res._1
+   var s = init_res._2
+   
    poke(c.io.operand.valid,false.B)
    step(1)
 
    poke(c.io.init,false.B)
    step(1)
+   
+   for (i <- 1 to 1) {
+      val r = new scala.util.Random(i)
+      val Din = r.nextInt(1)
+      //val Din = 0
+      //val Din = 1
+      println("Din is = " + Din.toString)
 
+      poke(c.io.operand.bits, Din)
+      poke(c.io.operand.valid,true.B)
+      var res = goldenModel.Whitening_sw(false,Din,s)
+      out = res._1
+      s = res._2
+      println(s"Print during testing: Output is ${peek(c.io.result.bits)}")
+
+      expect(c.io.result.bits, out)
+      expect(c.io.result.valid, true.B)
+      step(1)
+   
+
+   }/**/
+}
    //while (peek(c.io.operand.ready) == BigInt(0)) {
    //   step(1)
    //}
@@ -37,6 +67,9 @@ step(1)
    // poke(c.io.result.ready,true.B)                  The 20:1 FIFO will always be ready, so the Whitening module doesn't depend on the result.ready signal.
   
 
+
+
+/*
    poke(c.io.operand.bits, "b1".U)
    poke(c.io.operand.valid,true.B)
 
@@ -157,7 +190,7 @@ step(1)
    
    step(1)
 */}
-
+*/
 class WhiteningTester extends ChiselFlatSpec {
    behavior of "Whitening"
    backends foreach {backend =>
