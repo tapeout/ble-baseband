@@ -28,7 +28,7 @@ class SoftwareGoldenModel (){
 	      bitOut = bitIn ^ temp
 	   }
 	   //for (i <- 0 to len-1) println(buf(i))
-	   println("bitOut is ",bitOut)
+	   println("	       Software Output = "+ bitOut)
 	   return (bitOut, buf.mkString(""))
 	}
 
