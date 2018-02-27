@@ -67,7 +67,7 @@ class Assembler extends Module {
 
 		//CRC
 		val CRC_Reset_w = Wire(Bool())
-		val CRC_Data_w = Wire(UInt(8.W))
+		val CRC_Data_w = Wire(UInt(1.W))
 		val CRC_Valid_w = Wire(Bool())
 		val CRC_Result_w = Wire(UInt(24.W))
 		val CRC_Seed_w = Wire(UInt(24.W))
@@ -102,7 +102,7 @@ class Assembler extends Module {
 	output_bundle <> OutputFunction(input_bundle, val_bundle)
 	val_bundle <> CombLogic(input_bundle, val_bundle)*/
 
-	//OutputFunction
+	//output function
 	when(val_bundle.state_r === IDLE){
 		output_bundle.AFIFO_Data.bits := 0.U
 	}.otherwise{
@@ -131,11 +131,11 @@ class Assembler extends Module {
 	//StateTransition with counter updates
 	when(val_bundle.state_r === IDLE){
 		when(input_bundle.DMA_Trigger === true.B){
-			state_w := PREAMBLE
+			val_bundle.state_w := PREAMBLE
 			val_bundle.counter_w := 0.U
 			val_bundle.counter_byte_w := 0.U
 		}.otherwise{
-			state_w := IDLE
+			val_bundle.state_w := IDLE
 		}
 	}.elsewhen(val_bundle.state_r === PREAMBLE){
 		when(val_bundle.counter_r === 0.U && val_bundle.counter_byte_r === 7.U && val_bundle.AFIFO_Fire_w === true.B){//note
@@ -186,7 +186,7 @@ class Assembler extends Module {
 			}
 		}			
 	}.elsewhen(val_bundle.state_r === PDU_PAYLOAD){
-		when(val_bundle.counter_r === val_bundle.PDU_Length_r && val_bundle.counter_byte_r === 7.U && val_bundle.AFIFO_Fire_w === true.B){//note
+		when(val_bundle.counter_r === val_bundle.PDU_Length_r-1.U && val_bundle.counter_byte_r === 7.U && val_bundle.AFIFO_Fire_w === true.B){//note
 			val_bundle.state_w := CRC
 			val_bundle.counter_w := 0.U
 			val_bundle.counter_byte_w := 0.U
@@ -224,14 +224,14 @@ class Assembler extends Module {
 
 	//PDU_Length
 	when(val_bundle.state_r === PDU_HEADER && val_bundle.counter_r === 1.U){
-		val_bundle.PDU_Length_r := data_r
+		val_bundle.PDU_Length_r := val_bundle.data_r
 	}.otherwise{
 		//do nothing: registers preserve value//note
 	}
 
 	//DMA_Data_Ready_r//note:check corner cases
 	when(val_bundle.state_r === AA || val_bundle.state_r === PDU_HEADER || val_bundle.state_r === PDU_PAYLOAD){
-		when(val_bundle.state_r === PDU_PAYLOAD && val_bundle.counter_r === val_bundle.PDU_Length_r && val_bundle.counter_byte_r === 7.U && val_bundle.AFIFO_Fire_w === true.B){
+		when(val_bundle.state_r === PDU_PAYLOAD && val_bundle.counter_r === val_bundle.PDU_Length_r-1.U && val_bundle.counter_byte_r === 7.U && val_bundle.AFIFO_Fire_w === true.B){
 			val_bundle.DMA_Data_Ready_r := false.B//special case at the end of PAYLOAD		
 		}.elsewhen(val_bundle.counter_byte_r === 7.U && val_bundle.AFIFO_Fire_w === true.B){
 			val_bundle.DMA_Data_Ready_r := true.B
