@@ -89,8 +89,8 @@ class PacketAssembler extends Module {
 	AFIFO_Fire_w := io.AFIFO_Data_o.ready & io.AFIFO_Data_o.valid
 
 	//Preamble assignments
-	Preamble0 := "b01010101".U
-	Preamble1 := "b10101010".U
+	Preamble0 := "b10101010".U
+	Preamble1 := "b01010101".U
 
 
 //combinational logic
@@ -328,7 +328,7 @@ class PacketAssembler extends Module {
 
 
 //sequential logic
-	state_r 			:= state_w
+	state_r 		:= state_w
 	counter_r 		:= counter_w
 	counter_byte_r	:= counter_byte_w
 	data_r			:= data_w
@@ -346,20 +346,20 @@ class PacketAssembler extends Module {
 	//CRC instantiate
 	val CRC_inst = Module(new CRC_TestModule)
 
-	CRC_Reset_w := CRC_inst.io.init
-	CRC_Data_w := CRC_inst.io.operand.bits
-	CRC_Valid_w := CRC_inst.io.operand.valid
+	CRC_inst.io.init := CRC_Reset_w
+	CRC_inst.io.operand.bits := CRC_Data_w
+	CRC_inst.io.operand.valid := CRC_Valid_w
 	CRC_Result_w := CRC_inst.io.result
-	CRC_Seed_w := CRC_inst.io.seed
+	CRC_inst.io.seed := CRC_Seed_w
 
 	//whitening instantiate
 	val WHITE_inst = Module(new Whitening_TestModule)
 
-	WHITE_Reset_w := WHITE_inst.io.init
-	WHITE_Data_w := WHITE_inst.io.operand.bits
-	WHITE_Valid_w := WHITE_inst.io.operand.valid
+	WHITE_inst.io.init := WHITE_Reset_w
+	WHITE_inst.io.operand.bits := WHITE_Data_w
+	WHITE_inst.io.operand.valid := WHITE_Valid_w
 	WHITE_Result_w := WHITE_inst.io.result
-	WHITE_Seed_w := WHITE_inst.io.seed
+	WHITE_inst.io.seed := WHITE_Seed_w
 
 }
 

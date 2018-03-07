@@ -102,8 +102,8 @@ class PacketDisAssembler extends Module {
   val_bundle.Flag_CRC_Fire_w := io.DMA_Flag_CRC_o.ready & io.DMA_Flag_CRC_o.valid
 
     //preamble hard code
-  val_bundle.Preamble0 := "b01010101".U
-  val_bundle.Preamble1 := "b10101010".U
+  val_bundle.Preamble0 := "b10101010".U
+  val_bundle.Preamble1 := "b01010101".U
   when(io.REG_AA_i(0) === 0.U){
     val_bundle.Preamble01 := val_bundle.Preamble0    
   }.otherwise{
