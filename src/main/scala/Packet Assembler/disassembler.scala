@@ -1,4 +1,10 @@
-class DisAssembler extends Module {
+/*package PacketAssembler//note
+
+import chisel3._
+import chisel3.util._
+
+
+class PacketDisAssembler extends Module {
   val io = IO(new Bundle {
     //DMA, REG
     val DMA_Switch_i = Input(Bool())
@@ -17,7 +23,20 @@ class DisAssembler extends Module {
 
 //scala declaration(note: can be a class)
   //state parameter
-  val IDLE :: PREAMBLE :: AA :: PDU_HEADER :: PDU_PAYLOAD :: CRC :: Nil = Enum(6)
+  //val IDLE :: PREAMBLE :: AA :: PDU_HEADER :: PDU_PAYLOAD :: CRC :: Nil = Enum(6)
+  val IDLE = Wire(UInt(3.W))
+  val PREAMBLE = Wire(UInt(3.W))
+  val AA = Wire(UInt(3.W))
+  val PDU_HEADER = Wire(UInt(3.W))
+  val PDU_PAYLOAD = Wire(UInt(3.W))
+  val CRC = Wire(UInt(3.W))
+  IDLE := 0.U
+  PREAMBLE := 1.U
+  AA := 2.U
+  PDU_HEADER := 3.U
+  PDU_PAYLOAD := 4.U
+  CRC := 5.U
+
   val initial_state = IDLE
   val state_list = List(IDLE, PREAMBLE, AA, PDU_HEADER, PDU_PAYLOAD, CRC)
 
@@ -350,3 +369,4 @@ class DisAssembler extends Module {
   val_bundle.data_r     := val_bundle.data_w
 
 }
+*/
