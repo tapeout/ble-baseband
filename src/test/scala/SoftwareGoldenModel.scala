@@ -32,4 +32,49 @@ class SoftwareGoldenModel (){
 	   return (bitOut, buf.mkString(""))
 	}
 
+
+	def Crc_sw(reset: Boolean, bitIn: Int, lfsr: String): (String) = {
+	   var len = 24
+	   var buf = Array.ofDim[Int](len)
+	   var bitOut: Int = 0
+	   if (reset)
+	      for (i <- 0 to len-1)
+	         buf(i) = lfsr(i).asDigit
+	   else  {
+	      for (i <- 0 to len-1)  
+	         buf(i) = lfsr(i).asDigit
+	   
+	   //for (i <- 0 to len-1) print(buf(i))
+	   //println()
+	      var temp = buf(23) ^bitIn
+	      buf(23) = buf(22)
+	      buf(22) = buf(21)
+	      buf(21) = buf(20)
+	      buf(20) = buf(19)
+	      buf(19) = buf(18)
+	      buf(18) = buf(17)
+	      buf(17) = buf(16)
+	      buf(16) = buf(15)
+	      buf(15) = buf(14)
+	      buf(14) = buf(13)
+	      buf(13) = buf(12)
+	      buf(12) = buf(11)
+	      buf(11) = buf(10)
+	      buf(10) = buf(9) ^ temp
+	      buf(9) = buf(8) ^ temp
+	      buf(8) = buf(7)
+	      buf(7) = buf(6)
+	      buf(6) = buf(5) ^ temp
+	      buf(5) = buf(4)
+	      buf(4) = buf(3) ^ temp
+	      buf(3) = buf(2) ^ temp
+	      buf(2) = buf(1)
+	      buf(1) = buf(0) ^ temp
+	      buf(0) = temp
+	   }
+	   //for (i <- 0 to len-1) println(buf(i))
+	   println("	       Software Output = "+ buf)
+	   return (buf.mkString(""))
+	}
+
 }
