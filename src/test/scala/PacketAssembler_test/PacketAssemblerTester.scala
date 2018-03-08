@@ -22,7 +22,7 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
 	val wholepacket = "h11001010100101071001101001".U//AA first bit: 1; length:7; total length: 26(13 bytes)
 	//val wholepacket_neg = ~wholepacket
 	val preamble = "b01010101".U
-	val CRC = "h001".U
+	val CRC = "h101001".U
 
 //reset
 	//reset(3)

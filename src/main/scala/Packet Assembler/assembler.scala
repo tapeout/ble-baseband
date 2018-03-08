@@ -376,7 +376,7 @@ class CRC_TestModule extends Module {
   })
 
 	io.operand.ready := true.B
-	io.result := "h001".U
+	io.result := "h101001".U
 }
 
 class Whitening_TestModule extends Module {
