@@ -21,6 +21,19 @@ class PacketDisAssembler extends Module {
     val AFIFO_Data_i = Flipped(DecoupledIO(UInt(1.W)))//decouple(source): data, pop, empty
 })
 
+/*
+//testing assignments
+io.DMA_Data_o.bits := 0.U
+io.DMA_Data_o.valid := true.B
+io.DMA_Length_o.bits := 0.U
+io.DMA_Length_o.valid := true.B
+io.DMA_Flag_AA_o.bits := true.B
+io.DMA_Flag_AA_o.valid := true.B
+io.DMA_Flag_CRC_o.bits := true.B
+io.DMA_Flag_CRC_o.valid := true.B
+io.AFIFO_Data_i.ready := true.B
+*/
+
 //scala declaration(note: can be a class)
   //state parameter
   //val IDLE :: PREAMBLE :: AA :: PDU_HEADER :: PDU_PAYLOAD :: CRC :: Nil = Enum(6)
@@ -169,6 +182,13 @@ class PacketDisAssembler extends Module {
       state_w := AA
       when(DMA_Data_Fire_w === true.B){
         counter_w := counter_r+1.U     
+      }
+      when(AFIFO_Fire_w === true.B){
+        when(counter_byte_r === 7.U){
+          counter_byte_w := 0.U
+        }.otherwise{
+          counter_byte_w := counter_byte_r+1.U
+        }
       }       
     }     
   }.elsewhen(state_r === PDU_HEADER){
@@ -180,6 +200,13 @@ class PacketDisAssembler extends Module {
       state_w := PDU_HEADER
       when(DMA_Data_Fire_w === true.B){
         counter_w := counter_r+1.U     
+      }
+      when(AFIFO_Fire_w === true.B){
+        when(counter_byte_r === 7.U){
+          counter_byte_w := 0.U
+        }.otherwise{
+          counter_byte_w := counter_byte_r+1.U
+        }
       }       
     }     
   }.elsewhen(state_r === PDU_PAYLOAD){
@@ -191,7 +218,14 @@ class PacketDisAssembler extends Module {
       state_w := PDU_PAYLOAD
       when(DMA_Data_Fire_w === true.B){
         counter_w := counter_r+1.U     
-      }       
+      }
+      when(AFIFO_Fire_w === true.B){
+        when(counter_byte_r === 7.U){
+          counter_byte_w := 0.U
+        }.otherwise{
+          counter_byte_w := counter_byte_r+1.U
+        }
+      }         
     }     
   }.elsewhen(state_r === CRC){
     when(counter_r === 2.U && DMA_Data_Fire_w === true.B){//note
@@ -202,21 +236,17 @@ class PacketDisAssembler extends Module {
       state_w := CRC
       when(DMA_Data_Fire_w === true.B){
         counter_w := counter_r+1.U     
+      }
+      when(AFIFO_Fire_w === true.B){
+        when(counter_byte_r === 7.U){
+          counter_byte_w := 0.U
+        }.otherwise{
+          counter_byte_w := counter_byte_r+1.U
+        }
       }       
     }   
   }.otherwise{
     state_w := IDLE//error
-  }
-
-    //counter_byte updates
-  when(AFIFO_Fire_w === true.B){
-    when(counter_byte_r === 7.U){
-      counter_byte_w := 0.U
-    }.otherwise{
-      counter_byte_w := counter_byte_r+1.U
-    }
-  }.otherwise{
-    //do nothing
   }
 
   //packet status
@@ -227,7 +257,8 @@ class PacketDisAssembler extends Module {
     nextPacket_w := false.B      
   }
     //PDU_Length
-  when(state_r === PDU_PAYLOAD && counter_r === 0.U && counter_byte_r === 0.U){//note: can change to intuitive statement(add fire_w) with data_w
+  //when(state_r === PDU_PAYLOAD && counter_r === 0.U && counter_byte_r === 0.U){//note: can change to intuitive statement(add fire_w) with data_w
+  when(state_r === PDU_HEADER && counter_r === 1.U && DMA_Data_Fire_w === true.B){//note: can change to intuitive statement(add fire_w) with data_w
     PDU_Length_r := data_r
     PDU_Length_Valid_r := true.B
   }.otherwise{
