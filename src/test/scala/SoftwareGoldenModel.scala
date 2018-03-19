@@ -39,7 +39,9 @@ class SoftwareGoldenModel (){
 	   var bitOut: Int = 0
 	   if (reset)
 	      for (i <- 0 to len-1)
-	         buf(i) = lfsr(i).asDigit
+	        //buf(i) = lfsr(i).asDigit
+	     	buf(i) = lfsr(len-1-i).asDigit 
+	     	// position 23 shall be set as the MSB
 	   else  {
 	      for (i <- 0 to len-1)  
 	         buf(i) = lfsr(i).asDigit
@@ -73,7 +75,8 @@ class SoftwareGoldenModel (){
 	      buf(0) = temp
 	   }
 	   //for (i <- 0 to len-1) println(buf(i))
-	   println("	       Software Output = "+ buf)
+	  //println(s"Software Output = $buf")
+		println("	       Software Output = " +buf(0)+buf(1)+buf(2)+buf(3)+buf(4)+buf(5)+buf(6)+buf(7)+buf(8)+buf(9)+buf(10)+buf(11)+buf(12)+buf(13)+buf(14)+buf(15)+buf(16)+buf(17)+buf(18)+buf(19)+buf(20)+buf(21)+buf(22)+buf(23))
 	   return (buf.mkString(""))
 	}
 
