@@ -24,13 +24,21 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
     val AFIFO_Data_i = Flipped(DecoupledIO(UInt(1.W)))//decouple(source): data, pop, empty*/
 
 //scala declaration
+/*
+//hard-coded arbitrary test
 	val wholepacket = "hefefee_eeffefefeffefe_f8ef_01101001_55".U//AA first bit: 1; length:7; total length: 26(13 bytes); wrong CRC
 	val wholepacket_neg = "h101011_11001010100101_0710_feefeffe_aa".U
 	val AA = "h01100001".U//a wrong one
 	//val preamble = "b01010101".U
 	//val CRC = "h101001".U
 	val random_sequence = "hf7293742343023801b".U//72 bits//note not to poke preamble here
-
+*/
+	val wholepacket = "hefefee_eeffefefeffefe_f8ef_01101001_55".U//AA first bit: 1; length:7; total length: 26(13 bytes); wrong CRC
+	val wholepacket_neg = "h101011_11001010100101_0710_feefeffe_aa".U
+	val AA = "h01100001".U//a wrong one
+	//val preamble = "b01010101".U
+	//val CRC = "h101001".U
+	val random_sequence = "hf7293742343023801b".U//72 bits//note not to poke preamble here
 //reset
 	//reset(3)
 

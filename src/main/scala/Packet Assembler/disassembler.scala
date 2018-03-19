@@ -2,6 +2,8 @@ package PacketAssembler//note
 
 import chisel3._
 import chisel3.util._
+import CRC._
+import Whitening._
 
 
 class PacketDisAssembler extends Module {
@@ -419,6 +421,26 @@ io.AFIFO_Data_i.ready := true.B
   data_r     := data_w.asUInt
 
   //CRC instantiate
+  val CRC_inst = Module(new Serial_CRC)
+
+  CRC_inst.io.init := CRC_Reset_w
+  CRC_inst.io.operand.bits := CRC_Data_w
+  CRC_inst.io.operand.valid := CRC_Valid_w
+  CRC_Result_w := CRC_inst.io.result.bits
+  CRC_inst.io.seed := CRC_Seed_w
+
+  //whitening instantiate
+  val WHITE_inst = Module(new Whitening)
+
+  WHITE_inst.io.init := DEWHITE_Reset_w
+  WHITE_inst.io.operand.bits := DEWHITE_Data_w
+  WHITE_inst.io.operand.valid := DEWHITE_Valid_w
+  DEWHITE_Result_w := WHITE_inst.io.result.bits
+  WHITE_inst.io.seed := DEWHITE_Seed_w
+
+/*
+//for testing
+  //CRC instantiate
   val CRC_inst = Module(new CRC_TestModule)
 
   CRC_inst.io.init := CRC_Reset_w
@@ -435,5 +457,5 @@ io.AFIFO_Data_i.ready := true.B
   WHITE_inst.io.operand.valid := DEWHITE_Valid_w
   DEWHITE_Result_w := WHITE_inst.io.result
   WHITE_inst.io.seed := DEWHITE_Seed_w
-
+*/
 }

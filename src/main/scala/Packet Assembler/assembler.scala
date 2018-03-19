@@ -2,6 +2,8 @@ package PacketAssembler//note
 
 import chisel3._
 import chisel3.util._
+import CRC._
+import Whitening._
 
 
 class PacketAssembler extends Module {
@@ -344,6 +346,26 @@ class PacketAssembler extends Module {
 	}*/
 
 	//CRC instantiate
+	val CRC_inst = Module(new Serial_CRC)
+
+	CRC_inst.io.init := CRC_Reset_w
+	CRC_inst.io.operand.bits := CRC_Data_w
+	CRC_inst.io.operand.valid := CRC_Valid_w
+	CRC_Result_w := CRC_inst.io.result.bits
+	CRC_inst.io.seed := CRC_Seed_w
+
+	//whitening instantiate
+	val WHITE_inst = Module(new Whitening)
+
+	WHITE_inst.io.init := WHITE_Reset_w
+	WHITE_inst.io.operand.bits := WHITE_Data_w
+	WHITE_inst.io.operand.valid := WHITE_Valid_w
+	WHITE_Result_w := WHITE_inst.io.result.bits
+	WHITE_inst.io.seed := WHITE_Seed_w
+
+/*
+//for testing
+	//CRC instantiate
 	val CRC_inst = Module(new CRC_TestModule)
 
 	CRC_inst.io.init := CRC_Reset_w
@@ -360,10 +382,11 @@ class PacketAssembler extends Module {
 	WHITE_inst.io.operand.valid := WHITE_Valid_w
 	WHITE_Result_w := WHITE_inst.io.result
 	WHITE_inst.io.seed := WHITE_Seed_w
-
+*/
 }
 
-
+/*
+//CRC, Whitening modules for testing
 class CRC_TestModule extends Module {
     val io      = IO(new Bundle {
     val operand  = new DecoupledIO(UInt(1.W)).flip()
@@ -391,8 +414,9 @@ class Whitening_TestModule extends Module {
     io.operand.ready := true.B
     io.result := ~io.operand.bits
 }
-
+*/
 /*
+//old bundle declarations
 class valdecouple_class extends Bundle{
 	val bits = Wire(UInt(8.W))
 	val ready = Wire(Bool())

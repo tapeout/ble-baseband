@@ -19,17 +19,33 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
     val AFIFO_Data_o = Decoupled(UInt(1.W))//decouple(source): data, puch, full*/
 
 //scala declaration
+	/*
+//hard-coded arbitrary test
 	val wholepacket = "h11001010100101071001101001".U//AA first bit: 1; length:7; total length: 26(13 bytes)
 	//val wholepacket_neg = ~wholepacket
 	val preamble = "b01010101".U
 	val CRC = "h101001".U
+	*/
+//hard-coded David's test
+//0001110101010101101011011111011001000101110001111100010100001110001001100001001111000010101011001001100000110111101110000011000010100001110010011110010010010011011101011011011101000001011011001101000100101101101110
+	val wholepacket_dig = "b01101011011111011001000101110001_0100000000001000_011000110000000101001100010011100100000000000000_01000000100000001010000001100000000100001100101011000010101010101011001011001100".U
+	val wholepacket_rad = "b01101011011111011001000101110001_1111000101000011_100010011000010011110000101010110010011000001101_11101110000011000010100001110010011110010010010011011101011011011101000001011011".U
+	//---------------------_--------------AA----------------_---PDU header---_-----------PDU advertiser address---------------_-----------------PDU data1 and data2--------------------------------------------
+	val random_sequence = "b000111".U//pre-preamble
+	val preamble = "b01010101".U
+	val CRC_rad = "b001101000100101101101110".U
+
+	val wholepacket_dig_rev = "b00110011010011010101010101000011010100110000100000000110000001010000000100000010000000000000001001110010001100101000000011000110000100000000001010001110100010011011111011010110".U
+	val wholepacket_rad_rev = "b11011010000010111011011010111011001001001001111001001110000101000011000001110111101100000110010011010101000011110010000110010001110000101000111110001110100010011011111011010110".U
+	val preamble_rev = "b10101010".U
+	val CRC_rad_rev = "b011101101101001000101100".U
 
 //reset
 	//reset(3)
 
 //throughout packet
-	poke(c.io.REG_CRC_Seed_i,"h00000f".U)
-	poke(c.io.REG_White_Seed_i,"b0001100".U)
+	poke(c.io.REG_CRC_Seed_i,"b010101010101010101010101".U)
+	poke(c.io.REG_White_Seed_i,"b1100101".U)
 
 //initialize
 	poke(c.io.DMA_Trigger_i,false.B)
@@ -42,7 +58,7 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
 //trigger
 	poke(c.io.DMA_Trigger_i,true.B)
 	poke(c.io.DMA_Data_i.valid,true.B)
-	poke(c.io.DMA_Data_i.bits,wholepacket(7,0))
+	poke(c.io.DMA_Data_i.bits,wholepacket_dig_rev(7,0))
 
 	step(1)
 	poke(c.io.DMA_Trigger_i,false.B)
@@ -53,9 +69,9 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
 		//step(Random_Num(1,100))
 		step(5)
 		poke(c.io.AFIFO_Data_o.ready,true.B)
-   		expect(c.io.AFIFO_Data_o.bits, preamble(j))//note: U to B
+   		expect(c.io.AFIFO_Data_o.bits, preamble_rev(j))//note: U to B
    		//println(s"${peek(c.io.AFIFO_Data_o.bits)}")
-   		//println(s"${peek(preamble(j))}")
+   		//println(s"${peek(preamble_rev(j))}")
    		step(1)
  		poke(c.io.AFIFO_Data_o.ready,false.B)//need to test two ready  				
 	}
@@ -64,7 +80,7 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
 //AA
 	for(j<-0 to 31){
 		if(j%8==0){
-			poke(c.io.DMA_Data_i.bits,wholepacket((j/8)*8+7,(j/8)*8))
+			poke(c.io.DMA_Data_i.bits,wholepacket_dig_rev((j/8)*8+7,(j/8)*8))
 			poke(c.io.DMA_Data_i.valid,true.B)
 		}else{
 			poke(c.io.DMA_Data_i.valid,false.B)			
@@ -73,8 +89,8 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
 		//step(Random_Num(2,100))//minimun for DMA_fire: 2
 		step(5)
 		poke(c.io.AFIFO_Data_o.ready,true.B)
-   		expect(c.io.AFIFO_Data_o.bits, wholepacket(j))//note
-   		//println(s"j="+j+s"\n${peek(c.io.AFIFO_Data_o.bits)}\t${peek(wholepacket(j))}")
+   		expect(c.io.AFIFO_Data_o.bits, wholepacket_rad_rev(j))//note
+   		//println(s"j="+j+s"\n${peek(c.io.AFIFO_Data_o.bits)}\t${peek(wholepacket_rad_rev(j))}")
    		step(1)
  		poke(c.io.AFIFO_Data_o.ready,false.B)//need to test two ready  				
 	}
@@ -83,7 +99,7 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
 //PDU_HEADER
 	for(j<-32 to 47){
 		if(j%8==0){
-			poke(c.io.DMA_Data_i.bits,wholepacket((j/8)*8+7,(j/8)*8))
+			poke(c.io.DMA_Data_i.bits,wholepacket_dig_rev((j/8)*8+7,(j/8)*8))
 			poke(c.io.DMA_Data_i.valid,true.B)
 		}else{
 			poke(c.io.DMA_Data_i.valid,false.B)			
@@ -92,22 +108,17 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
 		//step(Random_Num(2,100))//minimun for DMA_fire: 2
 		step(5)
 		poke(c.io.AFIFO_Data_o.ready,true.B)
-   		//println(s"j="+j+s"\n${peek(c.io.AFIFO_Data_o.bits)}\t${peek(wholepacket(j))}")		
-		if(peek(wholepacket(j))==0){
-   			expect(c.io.AFIFO_Data_o.bits, 1)//note
-   			println("this is 1, expect 0")			
-		}else{
-   			expect(c.io.AFIFO_Data_o.bits, 0)//note				
-		}
+   		//println(s"j="+j+s"\n${peek(c.io.AFIFO_Data_o.bits)}\t${peek(wholepacket_rad_rev(j))}")		
+   		expect(c.io.AFIFO_Data_o.bits, wholepacket_rad_rev(j))//note
    		step(1)
  		poke(c.io.AFIFO_Data_o.ready,false.B)//need to test two ready  				
 	}
 	//step(Random_Num(8,100))
 	step(10)
 //PDU_PAYLOAD
-	for(j<-48 to 13*8-1){
+	for(j<-48 to 22*8-1){
 		if(j%8==0){
-			poke(c.io.DMA_Data_i.bits,wholepacket((j/8)*8+7,(j/8)*8))
+			poke(c.io.DMA_Data_i.bits,wholepacket_dig_rev((j/8)*8+7,(j/8)*8))
 			poke(c.io.DMA_Data_i.valid,true.B)
 		}else{
 			poke(c.io.DMA_Data_i.valid,false.B)			
@@ -115,11 +126,8 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
 		//step(Random_Num(2,100))//minimun for DMA_fire: 2
 		step(5)
 		poke(c.io.AFIFO_Data_o.ready,true.B)
-		if(peek(wholepacket(j))==0){
-   			expect(c.io.AFIFO_Data_o.bits, 1)//note		
-		}else{
-   			expect(c.io.AFIFO_Data_o.bits, 0)//note				
-		}
+   		expect(c.io.AFIFO_Data_o.bits, wholepacket_rad_rev(j))//note
+
    		step(1)
  		poke(c.io.AFIFO_Data_o.ready,false.B)//need to test two ready  				
 	}
@@ -127,21 +135,10 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
 	step(10)
 //CRC
 	for(j<-0 to 21){
-		if(j%8==0){
-			poke(c.io.DMA_Data_i.bits,CRC((j/8)*8+7,(j/8)*8))
-			poke(c.io.DMA_Data_i.valid,true.B)
-		}else{
-			poke(c.io.DMA_Data_i.valid,false.B)			
-		}
 		//step(Random_Num(1,100))
 		step(5)
 		poke(c.io.AFIFO_Data_o.ready,true.B)
-		println(s"j="+j+s"\n${peek(c.io.AFIFO_Data_o.bits)}\t${peek(CRC(j))}")
-		if(peek(CRC(j))==0){
-   			expect(c.io.AFIFO_Data_o.bits, 1)//note			
-		}else{
-   			expect(c.io.AFIFO_Data_o.bits, 0)//note				
-		}
+   		expect(c.io.AFIFO_Data_o.bits, CRC_rad_rev(j))//note
    		step(1)
  		poke(c.io.AFIFO_Data_o.ready,false.B)//need to test two ready consequently		
 	}
@@ -149,22 +146,14 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
 	//poke(c.io.DMA_Data_i.bits,CRC((j/8)*8+7,(j/8)*8))
 	step(1)
 	poke(c.io.AFIFO_Data_o.ready,true.B)
-	if(peek(CRC(j))==0){
-			expect(c.io.AFIFO_Data_o.bits, 1)//note
-			println("this is 1, expect 0")			
-	}else{
-			expect(c.io.AFIFO_Data_o.bits, 0)//note				
-	}
+   	expect(c.io.AFIFO_Data_o.bits, CRC_rad_rev(j))//note
+
 	j=23
 	//poke(c.io.DMA_Data_i.bits,CRC((j/8)*8+7,(j/8)*8))
 	step(1)
 	poke(c.io.AFIFO_Data_o.ready,true.B)
-	if(peek(CRC(j))==0){
-			expect(c.io.AFIFO_Data_o.bits, 1)//note
-			println("this is 1, expect 0")			
-	}else{
-			expect(c.io.AFIFO_Data_o.bits, 0)//note				
-	}
+   	expect(c.io.AFIFO_Data_o.bits, CRC_rad_rev(j))//note
+
 	expect(c.io.DMA_Done_o, true.B)//note	
 
 
