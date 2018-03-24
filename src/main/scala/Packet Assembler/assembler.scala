@@ -352,6 +352,7 @@ class PacketAssembler extends Module {
 	CRC_inst.io.operand.bits := CRC_Data_w
 	CRC_inst.io.operand.valid := CRC_Valid_w
 	CRC_Result_w := CRC_inst.io.result.bits
+	CRC_inst.io.result.ready := true.B
 	CRC_inst.io.seed := CRC_Seed_w
 
 	//whitening instantiate
@@ -361,6 +362,7 @@ class PacketAssembler extends Module {
 	WHITE_inst.io.operand.bits := WHITE_Data_w
 	WHITE_inst.io.operand.valid := WHITE_Valid_w
 	WHITE_Result_w := WHITE_inst.io.result.bits
+	WHITE_inst.io.result.ready := true.B
 	WHITE_inst.io.seed := WHITE_Seed_w
 
 /*
