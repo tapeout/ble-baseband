@@ -1,6 +1,5 @@
 ### Project Specific stuff
 test_run_dir/*
-project/build.properties
 ### XilinxISE template
 # intermediate build files
 *.bgn
