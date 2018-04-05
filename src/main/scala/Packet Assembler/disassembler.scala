@@ -268,22 +268,22 @@ io.AFIFO_Data_i.ready := true.B
   }
 
     //Flag_AA
-  when(state_r === AA && counter_r === 1.U && counter_byte_r === 0.U){//note: same as above
+  when(state_r === AA && counter_r === 0.U && DMA_Data_Fire_w === true.B){//note: same as above
     when(data_r != io.REG_AA_i(7,0)){
       Flag_AA_r := true.B
       Flag_AA_Valid_r := true.B      
     }
-  }.elsewhen(state_r === AA && counter_r === 2.U && counter_byte_r === 0.U){
+  }.elsewhen(state_r === AA && counter_r === 1.U && DMA_Data_Fire_w === true.B){
     when(data_r != io.REG_AA_i(15,8)){
       Flag_AA_r := true.B
       Flag_AA_Valid_r := true.B      
     }    
-  }.elsewhen(state_r === AA && counter_r === 3.U && counter_byte_r === 0.U){
+  }.elsewhen(state_r === AA && counter_r === 2.U && DMA_Data_Fire_w === true.B){
     when(data_r != io.REG_AA_i(23,16)){
       Flag_AA_r := true.B
       Flag_AA_Valid_r := true.B      
     }
-  }.elsewhen(state_r === PDU_HEADER && counter_r === 0.U && counter_byte_r === 0.U){
+  }.elsewhen(state_r === AA && counter_r === 3.U && DMA_Data_Fire_w === true.B){
     when(data_r != io.REG_AA_i(31,24)){
       Flag_AA_r := true.B
       Flag_AA_Valid_r := true.B      
@@ -295,17 +295,17 @@ io.AFIFO_Data_i.ready := true.B
   }
 
     //Flag_CRC
-  when(state_r === CRC && counter_r === 1.U && counter_byte_r === 0.U){//note: same as above
+  when(state_r === CRC && counter_r === 0.U && DMA_Data_Fire_w === true.B){//note: same as above
     when(data_r != CRC_Result_w(7,0)){
       Flag_CRC_r := true.B
       Flag_CRC_Valid_r := true.B      
     }
-  }.elsewhen(state_r === CRC && counter_r === 2.U && counter_byte_r === 0.U){
+  }.elsewhen(state_r === CRC && counter_r === 1.U && DMA_Data_Fire_w === true.B){
     when(data_r != CRC_Result_w(15,8)){
       Flag_CRC_r := true.B
       Flag_CRC_Valid_r := true.B      
     }   
-  }.elsewhen(state_r === IDLE && counter_r === 0.U && counter_byte_r === 0.U){
+  }.elsewhen(state_r === CRC && counter_r === 2.U && DMA_Data_Fire_w === true.B){
     when(data_r != CRC_Result_w(23,16)){
       Flag_CRC_r := true.B
       Flag_CRC_Valid_r := true.B      
@@ -427,6 +427,7 @@ io.AFIFO_Data_i.ready := true.B
   CRC_inst.io.operand.bits := CRC_Data_w
   CRC_inst.io.operand.valid := CRC_Valid_w
   CRC_Result_w := CRC_inst.io.result.bits
+  CRC_inst.io.result.ready := true.B
   CRC_inst.io.seed := CRC_Seed_w
 
   //whitening instantiate
@@ -436,6 +437,7 @@ io.AFIFO_Data_i.ready := true.B
   WHITE_inst.io.operand.bits := DEWHITE_Data_w
   WHITE_inst.io.operand.valid := DEWHITE_Valid_w
   DEWHITE_Result_w := WHITE_inst.io.result.bits
+  WHITE_inst.io.result.ready := true.B
   WHITE_inst.io.seed := DEWHITE_Seed_w
 
 /*
