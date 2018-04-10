@@ -269,22 +269,22 @@ io.AFIFO_Data_i.ready := true.B
 
     //Flag_AA
   when(state_r === AA && counter_r === 0.U && DMA_Data_Fire_w === true.B){//note: same as above
-    when(data_r != io.REG_AA_i(7,0)){
+    when(data_r =/= io.REG_AA_i(7,0)){
       Flag_AA_r := true.B
       Flag_AA_Valid_r := true.B      
     }
   }.elsewhen(state_r === AA && counter_r === 1.U && DMA_Data_Fire_w === true.B){
-    when(data_r != io.REG_AA_i(15,8)){
+    when(data_r =/= io.REG_AA_i(15,8)){
       Flag_AA_r := true.B
       Flag_AA_Valid_r := true.B      
     }    
   }.elsewhen(state_r === AA && counter_r === 2.U && DMA_Data_Fire_w === true.B){
-    when(data_r != io.REG_AA_i(23,16)){
+    when(data_r =/= io.REG_AA_i(23,16)){
       Flag_AA_r := true.B
       Flag_AA_Valid_r := true.B      
     }
   }.elsewhen(state_r === AA && counter_r === 3.U && DMA_Data_Fire_w === true.B){
-    when(data_r != io.REG_AA_i(31,24)){
+    when(data_r =/= io.REG_AA_i(31,24)){
       Flag_AA_r := true.B
       Flag_AA_Valid_r := true.B      
     }.otherwise{
@@ -296,17 +296,17 @@ io.AFIFO_Data_i.ready := true.B
 
     //Flag_CRC
   when(state_r === CRC && counter_r === 0.U && DMA_Data_Fire_w === true.B){//note: same as above
-    when(data_r != CRC_Result_w(7,0)){
+    when(data_r =/= CRC_Result_w(7,0)){
       Flag_CRC_r := true.B
       Flag_CRC_Valid_r := true.B      
     }
   }.elsewhen(state_r === CRC && counter_r === 1.U && DMA_Data_Fire_w === true.B){
-    when(data_r != CRC_Result_w(15,8)){
+    when(data_r =/= CRC_Result_w(15,8)){
       Flag_CRC_r := true.B
       Flag_CRC_Valid_r := true.B      
     }   
   }.elsewhen(state_r === CRC && counter_r === 2.U && DMA_Data_Fire_w === true.B){
-    when(data_r != CRC_Result_w(23,16)){
+    when(data_r =/= CRC_Result_w(23,16)){
       Flag_CRC_r := true.B
       Flag_CRC_Valid_r := true.B      
     }.otherwise{
