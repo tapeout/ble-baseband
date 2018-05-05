@@ -45,15 +45,17 @@ io.AFIFO_Data_i.ready := true.B
   val PDU_HEADER = Wire(UInt(3.W))
   val PDU_PAYLOAD = Wire(UInt(3.W))
   val CRC = Wire(UInt(3.W))
+  val WAIT_DMA = Wire(UInt(3.W))
   IDLE := 0.U
   PREAMBLE := 1.U
   AA := 2.U
   PDU_HEADER := 3.U
   PDU_PAYLOAD := 4.U
   CRC := 5.U
+  WAIT_DMA := 6.U
 
   val initial_state = IDLE
-  val state_list = List(IDLE, PREAMBLE, AA, PDU_HEADER, PDU_PAYLOAD, CRC)
+  val state_list = List(IDLE, PREAMBLE, AA, PDU_HEADER, PDU_PAYLOAD, CRC, WAIT_DMA)
 
   //reg, wire
   //FSM
@@ -67,7 +69,6 @@ io.AFIFO_Data_i.ready := true.B
   val counter_byte_r = RegInit(UInt(3.W), 0.U)  
 
   //packet status
-  val nextPacket_w = Wire(Bool())  
   val PDU_Length_r = RegInit(UInt(8.W), 0.U)
   val PDU_Length_Valid_r = RegInit(Bool(), false.B)
   val Flag_AA_r = RegInit(Bool(), false.B)
@@ -162,7 +163,13 @@ io.AFIFO_Data_i.ready := true.B
     //Note: counter_r updates when DMA_Data_Fire_w
     //Note: counter_byte_r updates when AFIFO_Fire_w
   when(state_r === IDLE){
-    when(io.DMA_Switch_i === true.B && nextPacket_w === true.B){//note: DMA_Switch_i usage
+    PDU_Length_r := 0.U
+    PDU_Length_Valid_r := false.B
+    Flag_AA_r := false.B
+    Flag_AA_Valid_r := false.B
+    Flag_CRC_r := false.B
+    Flag_CRC_Valid_r := false.B
+    when(io.DMA_Switch_i === true.B){//note: DMA_Switch_i usage
       state_w := PREAMBLE
     }.otherwise{
       state_w := IDLE
@@ -231,7 +238,7 @@ io.AFIFO_Data_i.ready := true.B
     }     
   }.elsewhen(state_r === CRC){
     when(counter_r === 2.U && DMA_Data_Fire_w === true.B){//note
-      state_w := IDLE
+      state_w := WAIT_DMA
       counter_w := 0.U
       counter_byte_w := 0.U
     }.otherwise{
@@ -247,22 +254,23 @@ io.AFIFO_Data_i.ready := true.B
         }
       }       
     }   
+  }.elsewhen(state_r === WAIT_DMA) {
+    when (io.DMA_Length_o.ready === true.B && io.DMA_Flag_AA_o.ready === true.B && io.DMA_Flag_CRC_o.ready === true.B) {
+      state_w := IDLE
+    }.otherwise {
+      state_w := WAIT_DMA
+    }
   }.otherwise{
     state_w := IDLE//error
   }
 
-  //packet status
-    //next packet
-  when(state_r === IDLE && io.DMA_Length_o.ready === true.B && io.DMA_Flag_AA_o.ready === true.B && io.DMA_Flag_CRC_o.ready === true.B){
-    nextPacket_w := true.B
-  }.otherwise{
-    nextPacket_w := false.B      
-  }
     //PDU_Length
   //when(state_r === PDU_PAYLOAD && counter_r === 0.U && counter_byte_r === 0.U){//note: can change to intuitive statement(add fire_w) with data_w
   when(state_r === PDU_HEADER && counter_r === 1.U && DMA_Data_Fire_w === true.B){//note: can change to intuitive statement(add fire_w) with data_w
     PDU_Length_r := data_r
     PDU_Length_Valid_r := true.B
+  }.elsewhen(state_w === IDLE) {
+    PDU_Length_Valid_r := false.B
   }.otherwise{
     //do nothing: registers preserve value//note
   }
@@ -316,15 +324,6 @@ io.AFIFO_Data_i.ready := true.B
     //do nothing: registers preserve value//note
   }
 
-    //reset for every packet
-  when(nextPacket_w === true.B){
-    PDU_Length_r := 0.U
-    PDU_Length_Valid_r := false.B
-    Flag_AA_r := false.B
-    Flag_AA_Valid_r := false.B
-    Flag_CRC_r := false.B
-    Flag_CRC_Valid_r := false.B
-  }
 
   //DMA_Data_Valid_r//note:check corner cases
   when(state_r === IDLE || state_r === PREAMBLE){
@@ -391,7 +390,7 @@ io.AFIFO_Data_i.ready := true.B
   }
 
   //CRC
-  CRC_Reset_w := nextPacket_w
+  CRC_Reset_w := (state_r === IDLE)
   when(state_r === PDU_HEADER || state_r === PDU_PAYLOAD){//check corner cases
     CRC_Data_w := DEWHITE_Result_w
     CRC_Valid_w := AFIFO_Fire_w
@@ -403,7 +402,7 @@ io.AFIFO_Data_i.ready := true.B
   CRC_Seed_w := io.REG_CRC_Seed_i
 
   //dewhitening
-  DEWHITE_Reset_w := nextPacket_w
+  DEWHITE_Reset_w := (state_r === IDLE)
   when(state_r === PDU_HEADER || state_r === PDU_PAYLOAD || state_r === CRC){//check corner cases  
     DEWHITE_Data_w  := io.AFIFO_Data_i.bits
     DEWHITE_Valid_w := AFIFO_Fire_w
