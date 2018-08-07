@@ -35,6 +35,7 @@ endmodule // crc
 */
 
 class Whitening extends Module {
+    override def desiredName = "ble_whitening"
     val io      = IO(new Bundle {
     val operand  = new DecoupledIO(UInt(1.W)).flip()
     val result   = new DecoupledIO(UInt(1.W))

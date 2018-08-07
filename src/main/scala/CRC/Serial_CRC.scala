@@ -59,6 +59,7 @@ endmodule // crc
 */
 
 class Serial_CRC extends Module {
+    override def desiredName = "ble_crc"
     val io      = IO(new Bundle {
     val operand  = new DecoupledIO(UInt(1.W)).flip()
     val result   = new DecoupledIO(UInt(24.W))
