@@ -146,7 +146,6 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
 
   // pre_preamble
   PacketDisAssemblerTestUtils.writeBitsToFIFO(this, c.io.AFIFO_Data_i, data = Testcase.pre_preamble_rev, numBits = 6)
-  expect(c.io.DMA_Data_o.bits, 0.U) //note
   expect(c.io.DMA_Data_o.valid, false.B) //note
   println(s"after random_sequence\n${peek(c.io.DMA_Data_o.bits)}\t0.U")
 
