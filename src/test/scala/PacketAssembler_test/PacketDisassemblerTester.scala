@@ -61,6 +61,42 @@ object PacketDisAssemblerTestUtils {
     tester.poke(fifo.valid, 0)
   }
 
+  /**
+    * Write a given range of bits to the FIFO.
+    * @param tester PeekPokeTester to use
+    * @param fifo A Decoupled(UInt(1.W))
+    * @param writeData UInt literal containing data to write
+    * @param startBit Bit to start at (e.g. 0)
+    * @param endBit Bit to end at (e.g. 7)
+    * @param outputByteFifo Output byte FIFO to read from to check
+    * @param checkData Data with which to check output byte FIFO
+    */
+  def writeBitsToFIFOAndCheck[T <: Module](tester: PeekPokeTester[T],
+                                           fifo: DecoupledIO[UInt], writeData: UInt,
+                                           startBit: Int, endBit: Int,
+                                           outputByteFifo: DecoupledIO[UInt], checkData: UInt): Unit = {
+    require(endBit >= startBit)
+    for (j <- startBit to endBit - 1) {
+      // Wait for FIFO to become ready
+      while (tester.peek(fifo.ready) == 0) {
+        tester.step(1)
+      }
+      tester.poke(fifo.valid, 1)
+      tester.poke(fifo.bits, writeData(j).litValue)
+      tester.step(1)
+      if (j % 8 == 7) {
+        val byte = checkData((j / 8) * 8 + 7, (j / 8) * 8)
+        tester.expect(outputByteFifo.bits, byte.litValue)
+        tester.expect(outputByteFifo.valid, 1)
+        println(s"j=$j\n${tester.peek(outputByteFifo.bits)}\t${tester.peek(byte)}")
+      }
+    }
+    tester.poke(fifo.valid, 0)
+  }
+
+  /**
+    * Set some constants that need to be in place throughout the whole test.
+    */
   def setRegisterConstants[T <: Module](tester: PeekPokeTester[T],
                                         aa: UInt, aaConst: BigInt,
                                         crcSeed: UInt, crcSeedConst: BigInt,
