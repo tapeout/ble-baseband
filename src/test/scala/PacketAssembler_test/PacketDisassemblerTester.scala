@@ -182,25 +182,11 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   println(s"j=flagAA\n${peek(c.io.DMA_Flag_AA_o.bits)}\ttrue")
   println(s"j=flagAA\n${peek(c.io.DMA_Flag_AA_o.valid)}\ttrue")
 
-  //PDU_HEADER
-  for (j <- 32 to 47) {
-    poke(c.io.AFIFO_Data_i.valid, true.B)
-    poke(c.io.AFIFO_Data_i.bits, Testcase.wholepacket_rad_rev(j))
-
-    step(1)
-    poke(c.io.AFIFO_Data_i.valid, false.B)
-    if (j % 8 == 7) {
-      //poke(c.io.DMA_Data_o.ready,true.B)
-      val byte = Testcase.wholepacket_dig_rev((j / 8) * 8 + 7, (j / 8) * 8)
-      expect(c.io.DMA_Data_o.bits, byte)
-      expect(c.io.DMA_Data_o.valid, true.B)
-      //println(s"j="+j+s"\n${peek(c.io.DMA_Data_o.bits)}\t${peek(wholepacket((j/8)*8+7,(j/8)*8))}")
-    }
-    //println(s"j="+j+s"\n${peek(c.io.AFIFO_Data_o.bits)}\t${peek(wholepacket(j))}")
-    step(1)
-    //poke(c.io.DMA_Data_o.ready,false.B)
-  }
-  //step(1)
+  // PDU_HEADER
+  PacketDisAssemblerTestUtils.writeBitsToFIFOAndCheck(this, fifo = c.io.AFIFO_Data_i, writeData = Testcase.wholepacket_rad_rev,
+    startBit = 32, endBit = 47,
+    outputByteFifo = c.io.DMA_Data_o, checkData = Testcase.wholepacket_dig_rev)
+  step(1) // need an extra cycle before DMA_Length_o is valid
   expect(c.io.DMA_Length_o.bits, 16.U)
   expect(c.io.DMA_Length_o.valid, true.B)
   println(s"j=DMA_Length_o\n${peek(c.io.DMA_Length_o.bits)}\t16.U")
