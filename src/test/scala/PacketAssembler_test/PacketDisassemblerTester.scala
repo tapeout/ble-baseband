@@ -66,8 +66,8 @@ object PacketDisAssemblerTestUtils {
     * @param tester PeekPokeTester to use
     * @param fifo A Decoupled(UInt(1.W))
     * @param writeData UInt literal containing data to write
-    * @param startBit Bit to start at (e.g. 0)
-    * @param endBit Bit to end at (e.g. 7)
+    * @param startBit Bit to start at (e.g. 0), inclusive
+    * @param endBit Bit to end at (e.g. 7), inclusive
     * @param outputByteFifo Output byte FIFO to read from to check
     * @param checkData Data with which to check output byte FIFO
     */
@@ -76,7 +76,7 @@ object PacketDisAssemblerTestUtils {
                                            startBit: Int, endBit: Int,
                                            outputByteFifo: DecoupledIO[UInt], checkData: UInt): Unit = {
     require(endBit >= startBit)
-    for (j <- startBit to endBit - 1) {
+    for (j <- startBit to endBit) {
       // Wait for FIFO to become ready
       while (tester.peek(fifo.ready) == 0) {
         tester.step(1)
