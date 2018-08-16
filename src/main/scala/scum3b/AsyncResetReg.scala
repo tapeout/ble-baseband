@@ -30,7 +30,7 @@ import Chisel._
   *  
   */
 
-class AsyncResetReg extends BlackBox {
+class AsyncResetReg extends BlackBox with chisel3.util.HasBlackBoxInline {
   val io = new Bundle {
     val d = Bool(INPUT)
     val q = Bool(OUTPUT)
@@ -39,6 +39,26 @@ class AsyncResetReg extends BlackBox {
     val clk = Clock(INPUT)
     val rst = Bool(INPUT)
   }
+  setInline("AsyncResetReg.v", """
+module AsyncResetReg (
+                      input      d,
+                      output reg q,
+                      input      en,
+
+                      input      clk,
+                      input      rst);
+
+   always @(posedge clk or posedge rst) begin
+
+      if (rst) begin
+         q <= 1'b0;
+      end else if (en) begin
+         q <= d;
+      end
+   end
+
+endmodule // AsyncResetReg
+""")
 }
 
 class SimpleRegIO(val w: Int) extends Bundle{
