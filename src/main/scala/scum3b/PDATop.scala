@@ -7,6 +7,14 @@ import chisel3.core.UserModule
 import chisel3.util._
 import chisel3.experimental.{withClockAndReset, withClock, withReset}
 
+class PDATopWrapper(debug: Boolean = false) extends Module {
+  // Tests PDATop using a single clock domain.
+
+  val pda = Module(new PDATop(debug))
+  val io = IO(chiselTypeOf(pda.io))
+  pda.io <> io
+}
+
 class PDATop(debug: Boolean = false) extends UserModule {
   val io = IO(new Bundle {
 
