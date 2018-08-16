@@ -180,17 +180,8 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
     //poke(c.io.DMA_Data_o.ready,false.B)
   }
 
-  //CRC
-  for (j <- 0 to 23) {
-    poke(c.io.AFIFO_Data_i.valid, true.B)
-    poke(c.io.AFIFO_Data_i.bits, Testcase.CRC_rad_rev(j))
-
-    step(1)
-    poke(c.io.AFIFO_Data_i.valid, false.B)
-    //println(s"j="+j+s"\n${peek(c.io.AFIFO_Data_o.bits)}\t${peek(wholepacket(j))}")
-    step(1)
-    //poke(c.io.DMA_Data_o.ready,false.B)
-  }
+  // CRC
+  PacketDisAssemblerTestUtils.writeBitsToFIFO(this, c.io.AFIFO_Data_i, data = Testcase.CRC_rad_rev, numBits = 24)
 
   step(2)
   expect(c.io.DMA_Flag_CRC_o.bits, false.B)
