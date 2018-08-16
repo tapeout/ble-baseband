@@ -110,9 +110,6 @@ object PacketDisAssemblerTestUtils {
 class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   import PacketDisAssemblerTestUtils.Testcase
 
-  //reset
-  reset(1)
-
   // Constants that remain throughout packet disassembly
   PacketDisAssemblerTestUtils.setRegisterConstants(this,
     c.io.REG_AA_i, Testcase.AA_rev.litValue,
@@ -158,25 +155,11 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   expect(c.io.DMA_Data_o.valid, false.B) //note
   println(s"after preamble\n${peek(c.io.DMA_Data_o.valid)}\tfalse")
 
-  //AA
-  for (j <- 0 to 31) {
-    poke(c.io.AFIFO_Data_i.valid, true.B)
-    poke(c.io.AFIFO_Data_i.bits, Testcase.wholepacket_rad_rev(j))
-
-    step(1)
-    poke(c.io.AFIFO_Data_i.valid, false.B)
-    if (j % 8 == 7) {
-      //poke(c.io.DMA_Data_o.ready,true.B)
-      val byte = Testcase.wholepacket_dig_rev((j / 8) * 8 + 7, (j / 8) * 8)
-      expect(c.io.DMA_Data_o.bits, byte)
-      expect(c.io.DMA_Data_o.valid, true.B)
-      println(s"j=" + j + s"\n${peek(c.io.DMA_Data_o.bits)}\t${peek(byte)}")
-    }
-    //println(s"j="+j+s"\n${peek(c.io.AFIFO_Data_o.bits)}\t${peek(wholepacket(j))}")
-    step(1)
-    //poke(c.io.DMA_Data_o.ready,false.B)
-  }
-  step(1)
+  // AA
+  PacketDisAssemblerTestUtils.writeBitsToFIFOAndCheck(this, fifo = c.io.AFIFO_Data_i, writeData = Testcase.wholepacket_rad_rev,
+    startBit = 0, endBit = 31,
+    outputByteFifo = c.io.DMA_Data_o, checkData = Testcase.wholepacket_dig_rev)
+  step(1) // need an extra cycle for DMA_Flag_AA_o to be valid
   expect(c.io.DMA_Flag_AA_o.bits, false.B)
   expect(c.io.DMA_Flag_AA_o.valid, true.B)
   println(s"j=flagAA\n${peek(c.io.DMA_Flag_AA_o.bits)}\ttrue")
@@ -194,24 +177,10 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   step(1)
   poke(c.io.DMA_Length_o.ready, false.B)
 
-  //PDU_PAYLOAD
-  for (j <- 48 to 22 * 8 - 1) {
-    poke(c.io.AFIFO_Data_i.valid, true.B)
-    poke(c.io.AFIFO_Data_i.bits, Testcase.wholepacket_rad_rev(j))
-
-    step(1)
-    poke(c.io.AFIFO_Data_i.valid, false.B)
-    if (j % 8 == 7) {
-      //poke(c.io.DMA_Data_o.ready,true.B)
-      val byte = Testcase.wholepacket_dig_rev((j / 8) * 8 + 7, (j / 8) * 8)
-      expect(c.io.DMA_Data_o.bits, byte)
-      expect(c.io.DMA_Data_o.valid, true.B)
-      println(s"j=" + j + s"\n${peek(c.io.DMA_Data_o.bits)}\t${peek(byte)}")
-    }
-    //println(s"j="+j+s"\n${peek(c.io.AFIFO_Data_o.bits)}\t${peek(wholepacket(j))}")
-    step(1)
-    //poke(c.io.DMA_Data_o.ready,false.B)
-  }
+  // PDU_PAYLOAD
+  PacketDisAssemblerTestUtils.writeBitsToFIFOAndCheck(this, fifo = c.io.AFIFO_Data_i, writeData = Testcase.wholepacket_rad_rev,
+    startBit = 48, endBit = 22 * 8 - 1,
+    outputByteFifo = c.io.DMA_Data_o, checkData = Testcase.wholepacket_dig_rev)
 
   // CRC
   PacketDisAssemblerTestUtils.writeBitsToFIFO(this, c.io.AFIFO_Data_i, data = Testcase.CRC_rad_rev, numBits = 24)
