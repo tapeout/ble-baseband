@@ -60,6 +60,15 @@ object PacketDisAssemblerTestUtils {
     }
     tester.poke(fifo.valid, 0)
   }
+
+  def setRegisterConstants[T <: Module](tester: PeekPokeTester[T],
+                                        aa: UInt, aaConst: BigInt,
+                                        crcSeed: UInt, crcSeedConst: BigInt,
+                                        dewhiteSeed: UInt, dewhiteSeedConst: BigInt): Unit = {
+    tester.poke(aa, aaConst)
+    tester.poke(crcSeed, crcSeedConst)
+    tester.poke(dewhiteSeed, dewhiteSeedConst)
+  }
 }
 
 class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
@@ -68,10 +77,12 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   //reset
   reset(1)
 
-  //throughout packet
-  poke(c.io.REG_AA_i, Testcase.AA_rev)
-  poke(c.io.REG_CRC_Seed_i, Testcase.CRC_Seed)
-  poke(c.io.REG_DeWhite_Seed_i, Testcase.DeWhite_Seed)
+  // Constants that remain throughout packet disassembly
+  PacketDisAssemblerTestUtils.setRegisterConstants(this,
+    c.io.REG_AA_i, Testcase.AA_rev.litValue,
+    c.io.REG_CRC_Seed_i, Testcase.CRC_Seed.litValue,
+    c.io.REG_DeWhite_Seed_i, Testcase.DeWhite_Seed.litValue
+  )
 
   //initialize
   poke(c.io.DMA_Switch_i, false.B)
