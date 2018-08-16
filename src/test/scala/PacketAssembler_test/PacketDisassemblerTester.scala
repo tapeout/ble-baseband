@@ -50,6 +50,10 @@ object PacketDisAssemblerTestUtils {
     */
   def writeBitsToFIFO[T <: Module](tester: PeekPokeTester[T], fifo: DecoupledIO[UInt], data: UInt, numBits: Int): Unit = {
     for (j <- 0 to numBits - 1) {
+      // Wait for FIFO to become ready
+      while (tester.peek(fifo.ready) == 0) {
+        tester.step(1)
+      }
       tester.poke(fifo.valid, 1)
       tester.poke(fifo.bits, data(j).litValue)
       tester.step(1)
