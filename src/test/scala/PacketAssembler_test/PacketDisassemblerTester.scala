@@ -5,6 +5,26 @@ import chisel3._
 import chisel3.util._
 import chisel3.iotesters.{PeekPokeTester, Driver, ChiselFlatSpec}
 
+/**
+  * Helper functions to make testing the packet disassembler easier.
+  */
+object PacketDisAssemblerTestUtils {
+  /**
+    * Write a given number of bits to the given FIFO.
+    * @param tester PeekPokeTester to use
+    * @param fifo A Decoupled(UInt(1.W))
+    * @param data UInt literal containing data to write
+    * @param numBits Number of bits to write
+    */
+  def writeBitsToFIFO[T <: Module](tester: PeekPokeTester[T], fifo: DecoupledIO[UInt], data: UInt, numBits: Int): Unit = {
+    for (j <- 0 to numBits - 1) {
+      tester.poke(fifo.valid, 1)
+      tester.poke(fifo.bits, data(j).litValue)
+      tester.step(1)
+    }
+    tester.poke(fifo.valid, 0)
+  }
+}
 
 class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   //IO reference
@@ -91,30 +111,17 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   poke(c.io.AFIFO_Data_i.bits, 0.U)
 
 
-  //random sequence before pre_preamble
-  var j: Int = 0
-  for (j <- 0 to 71) {
-    poke(c.io.AFIFO_Data_i.valid, true.B)
-    poke(c.io.AFIFO_Data_i.bits, random_sequence_rev(j))
-    step(1)
-  }
+  // Random sequence before pre_preamble
+  PacketDisAssemblerTestUtils.writeBitsToFIFO(this, c.io.AFIFO_Data_i, data = random_sequence_rev, numBits = 72)
 
-  //pre_preamble
-  for (j <- 0 to 5) {
-    poke(c.io.AFIFO_Data_i.valid, true.B)
-    poke(c.io.AFIFO_Data_i.bits, pre_preamble_rev(j))
-    step(1)
-  }
+  // pre_preamble
+  PacketDisAssemblerTestUtils.writeBitsToFIFO(this, c.io.AFIFO_Data_i, data = pre_preamble_rev, numBits = 6)
   expect(c.io.DMA_Data_o.bits, 0.U) //note
   expect(c.io.DMA_Data_o.valid, false.B) //note
   println(s"after random_sequence\n${peek(c.io.DMA_Data_o.bits)}\t0.U")
 
-  //PREAMBLE
-  for (j <- 0 to 7) {
-    poke(c.io.AFIFO_Data_i.valid, true.B)
-    poke(c.io.AFIFO_Data_i.bits, preamble_rev(j))
-    step(1)
-  }
+  // PREAMBLE
+  PacketDisAssemblerTestUtils.writeBitsToFIFO(this, c.io.AFIFO_Data_i, data = preamble_rev, numBits = 8)
   expect(c.io.DMA_Data_o.valid, false.B) //note
   println(s"after preamble\n${peek(c.io.DMA_Data_o.valid)}\tfalse")
 
