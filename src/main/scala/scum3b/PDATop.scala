@@ -1,18 +1,13 @@
 package scum3b
 
 import PacketAssembler.PacketDisAssembler
-import utils._
-import ee194.adc._
-import ee194.analoginterface._
-import fir._
-import scala.io.Source
-import integration194._
 
 import chisel3._
+import chisel3.core.UserModule
 import chisel3.util._
 import chisel3.experimental.{withClockAndReset, withClock, withReset}
 
-class PDATop(debug: Boolean = False) extends UserModule {
+class PDATop(debug: Boolean = false) extends UserModule {
   val io = IO(new Bundle {
 
     // BLE PDA I/O
@@ -57,10 +52,10 @@ class PDATop(debug: Boolean = False) extends UserModule {
 		cdrFIFO.io.enq.valid := io.CDR_recovered_clk
 
 		// dequeue to PDA data input mux
-		cdrFIFO.io.deq_clock := io.clk_clk_PDA
+		cdrFIFO.io.deq_clock := io.clk_PDA
 		cdrFIFO_wire.bits := cdrFIFO.io.deq.bits
 		cdrFIFO_wire.valid := cdrFIFO.io.deq.valid
-		cdrFIFO.ready := pda.io.AFIFO_Data_i.ready // output from PDA
+		cdrFIFO.io.deq.ready := pda.io.AFIFO_Data_i.ready // output from PDA
 
 	}
   // Choose either the CDR or ARM data to disassemble
@@ -68,7 +63,7 @@ class PDATop(debug: Boolean = False) extends UserModule {
   pda.io.AFIFO_Data_i.valid := Mux(io.choose_data_src, cdrFIFO_wire.valid, io.ARM_data_i.valid) // bits output from cdrFIFO and ARM_data_i
   io.ARM_data_i.ready := pda.io.AFIFO_Data_i.ready // output from PDA
 
-	def createARMFIFO[T](gen: => T, armSide: Decoupled[T], bleSide: Decoupled[T]): Unit = {
+	def createARMFIFO[T <: Data](gen: => T, armSide: DecoupledIO[T], bleSide: DecoupledIO[T]): Unit = {
 		withClockAndReset(clock=false.B.asClock, reset=false.B) {
 			val fifo = Module(new AsyncQueue(gen, 2048)) // write 8 bits per clock cycle
 			// enqueue from PDA
