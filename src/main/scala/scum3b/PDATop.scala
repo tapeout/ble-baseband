@@ -13,6 +13,10 @@ class PDATopWrapper(debug: Boolean = false) extends Module {
   val pda = Module(new PDATop(debug))
   val io = IO(chiselTypeOf(pda.io))
   pda.io <> io
+  pda.io.clk_CDR := clock
+  pda.io.clk_PDA := clock
+  pda.io.clk_ARM := clock
+  pda.io.reset_CDR := reset
 }
 
 class PDATop(debug: Boolean = false) extends UserModule {
@@ -35,57 +39,65 @@ class PDATop(debug: Boolean = false) extends UserModule {
     val CDR_recovered_data = Input(Bool())
 
     // scum3b ARM data
-    val ARM_data_i = Decoupled(UInt(1.W)) // note: BLE data input expects a decoupled interface. will need to generate ready/valid signals to feed in
+    val ARM_data_i = Flipped(Decoupled(UInt(1.W))) // note: BLE data input expects a decoupled interface. will need to generate ready/valid signals to feed in
 	
 	// Choose between CDR and ARM data inputs to PDA
     val choose_data_src = Input(Bool()) // 0 = CDR data; 1 = ARM data
     
     // Clock domains of CDR, PDA, ARM modules
-    val clk_CDR = Input(Bool())
-    val clk_PDA = Input(Bool())
-    val clk_ARM = Input(Bool())
+    val clk_CDR = Input(Clock())
+    val reset_CDR = Input(Bool())
+    val clk_PDA = Input(Clock())
+    val clk_ARM = Input(Clock())
   })
 
-  val pda = Module(new PacketDisAssembler())
+  withClockAndReset(clock = io.clk_CDR, reset = io.reset_CDR) {
+    val pda = Module(new PacketDisAssembler())
+    pda.io.DMA_Switch_i := io.ARM_Switch_i
+    pda.io.REG_AA_i := io.ARM_AA_i
+    pda.io.REG_CRC_Seed_i := io.ARM_CRC_Seed_i
+    pda.io.REG_DeWhite_Seed_i := io.ARM_DeWhite_Seed_i
 
-   // TODO: does it matter how deep this is? Should be 2048, or is arbitrary depth OK? Might not even need to be asynchronous
-  
-  val cdrFIFO_wire = Wire(Decoupled(UInt(1.W)))
+    // TODO: does it matter how deep this is? Should be 2048, or is arbitrary depth OK? Might not even need to be asynchronous
 
-	withClockAndReset(clock=false.B.asClock, reset=false.B) {
-		val cdrFIFO = Module(new AsyncQueue(UInt(1.W), 2048))
-		// enqueue from CDR
-		cdrFIFO.io.enq_clock := io.clk_CDR
-		cdrFIFO.io.enq.bits := io.CDR_recovered_data
-		cdrFIFO.io.enq.valid := io.CDR_recovered_clk
+    val cdrFIFO_wire = Wire(Decoupled(UInt(1.W)))
 
-		// dequeue to PDA data input mux
-		cdrFIFO.io.deq_clock := io.clk_PDA
-		cdrFIFO_wire.bits := cdrFIFO.io.deq.bits
-		cdrFIFO_wire.valid := cdrFIFO.io.deq.valid
-		cdrFIFO.io.deq.ready := pda.io.AFIFO_Data_i.ready // output from PDA
+    withClockAndReset(clock = false.B.asClock, reset = false.B) {
+      val cdrFIFO = Module(new AsyncQueue(UInt(1.W), 256))
+      // enqueue from CDR
+      cdrFIFO.io.enq_clock := io.clk_CDR
+      cdrFIFO.io.enq.bits := io.CDR_recovered_data
+      cdrFIFO.io.enq.valid := io.CDR_recovered_clk
 
-	}
-  // Choose either the CDR or ARM data to disassemble
-  pda.io.AFIFO_Data_i.bits := Mux(io.choose_data_src, cdrFIFO_wire.bits, io.ARM_data_i.bits) // bits output from cdrFIFO and ARM_data_i
-  pda.io.AFIFO_Data_i.valid := Mux(io.choose_data_src, cdrFIFO_wire.valid, io.ARM_data_i.valid) // bits output from cdrFIFO and ARM_data_i
-  io.ARM_data_i.ready := pda.io.AFIFO_Data_i.ready // output from PDA
+      // dequeue to PDA data input mux
+      cdrFIFO.io.deq_clock := io.clk_PDA
+      cdrFIFO_wire.bits := cdrFIFO.io.deq.bits
+      cdrFIFO_wire.valid := cdrFIFO.io.deq.valid
+      cdrFIFO.io.deq.ready := cdrFIFO_wire.ready
 
-	def createARMFIFO[T <: Data](gen: => T, armSide: DecoupledIO[T], bleSide: DecoupledIO[T]): Unit = {
-		withClockAndReset(clock=false.B.asClock, reset=false.B) {
-			val fifo = Module(new AsyncQueue(gen, 2048)) // write 8 bits per clock cycle
-			// enqueue from PDA
-			fifo.io.enq_clock := io.clk_PDA
-			fifo.io.enq <> bleSide
+    }
+    // Choose either the CDR or ARM data to disassemble
+    pda.io.AFIFO_Data_i.bits := Mux(io.choose_data_src, io.ARM_data_i.bits, cdrFIFO_wire.bits) // bits output from cdrFIFO and ARM_data_i
+    pda.io.AFIFO_Data_i.valid := Mux(io.choose_data_src, io.ARM_data_i.valid, cdrFIFO_wire.valid) // bits output from cdrFIFO and ARM_data_i
+    io.ARM_data_i.ready := pda.io.AFIFO_Data_i.ready // output from PDA
+    cdrFIFO_wire.ready := pda.io.AFIFO_Data_i.ready // output from PDA
 
-			// dequeue to ARM
-			fifo.io.deq_clock := io.clk_ARM
-			fifo.io.deq <> armSide
-		}
-	}
+    def createARMFIFO[T <: Data](gen: => T, armSide: DecoupledIO[T], bleSide: DecoupledIO[T]): Unit = {
+      withClockAndReset(clock = false.B.asClock, reset = false.B) {
+        val fifo = Module(new AsyncQueue(gen, 256)) // write 8 bits per clock cycle
+        // enqueue from PDA
+        fifo.io.enq_clock := io.clk_PDA
+        fifo.io.enq <> bleSide
 
-	createARMFIFO(UInt(8.W), io.ARM_Data_o, pda.io.DMA_Data_o)
-	createARMFIFO(UInt(8.W), io.ARM_Length_o, pda.io.DMA_Length_o)
-	createARMFIFO(Bool(), io.ARM_Flag_AA_o, pda.io.DMA_Flag_AA_o)
-	createARMFIFO(Bool(), io.ARM_Flag_CRC_o, pda.io.DMA_Flag_CRC_o)
+        // dequeue to ARM
+        fifo.io.deq_clock := io.clk_ARM
+        fifo.io.deq <> armSide
+      }
+    }
+
+    createARMFIFO(UInt(8.W), io.ARM_Data_o, pda.io.DMA_Data_o)
+    createARMFIFO(UInt(8.W), io.ARM_Length_o, pda.io.DMA_Length_o)
+    createARMFIFO(Bool(), io.ARM_Flag_AA_o, pda.io.DMA_Flag_AA_o)
+    createARMFIFO(Bool(), io.ARM_Flag_CRC_o, pda.io.DMA_Flag_CRC_o)
+  }
 }
