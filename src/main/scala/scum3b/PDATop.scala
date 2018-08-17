@@ -11,12 +11,26 @@ class PDATopWrapper(debug: Boolean = false) extends Module {
   // Tests PDATop using a single clock domain.
 
   val pda = Module(new PDATop(debug))
-  val io = IO(chiselTypeOf(pda.io))
-  pda.io <> io
+  val io = IO(new Bundle {
+    val pdaio = chiselTypeOf(pda.io)
+    val cdrDecoupled = Flipped(Decoupled(UInt(1.W)))
+  })
+  pda.io <> io.pdaio
   pda.io.clk_CDR := clock
   pda.io.clk_PDA := clock
   pda.io.clk_ARM := clock
   pda.io.reset_CDR := reset
+
+  val recoveredClk = WireInit(false.B)
+  val lastRecoveredClk = RegNext(recoveredClk, false.B)
+  when (lastRecoveredClk) {
+    io.cdrDecoupled.ready := false.B
+  } .otherwise {
+    io.cdrDecoupled.ready := true.B
+  }
+  recoveredClk := io.cdrDecoupled.fire()
+  pda.io.CDR_recovered_clk := recoveredClk
+  pda.io.CDR_recovered_data := io.cdrDecoupled.bits
 }
 
 class PDATop(debug: Boolean = false) extends UserModule {
