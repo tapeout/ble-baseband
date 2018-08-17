@@ -1,6 +1,7 @@
 package PacketAssembler.test
 
 import PacketAssembler._
+import scala.collection.mutable.ArrayBuffer
 import chisel3._
 import chisel3.util._
 import chisel3.iotesters.{PeekPokeTester, Driver, ChiselFlatSpec}
@@ -51,8 +52,14 @@ object PacketDisAssemblerTestUtils {
   def writeBitsToFIFO[T <: Module](tester: PeekPokeTester[T], fifo: DecoupledIO[UInt], data: UInt, numBits: Int): Unit = {
     for (j <- 0 to numBits - 1) {
       // Wait for FIFO to become ready
+      var count = 0
       while (tester.peek(fifo.ready) == 0) {
+        if (count > 100) {
+          println("Taking too long to become ready")
+          tester.finish
+        }
         tester.step(1)
+        count += 1
       }
       tester.poke(fifo.valid, 1)
       tester.poke(fifo.bits, data(j).litValue)
@@ -75,6 +82,12 @@ object PacketDisAssemblerTestUtils {
                                            fifo: DecoupledIO[UInt], writeData: UInt,
                                            startBit: Int, endBit: Int,
                                            outputByteFifo: DecoupledIO[UInt], checkData: UInt): Unit = {
+    // Keep track of received vs. expected outputs separately since there may be some delays
+    // between when the output is sent vs received.
+    val receivedOutputs: ArrayBuffer[BigInt] = ArrayBuffer()
+    val expectedOutputs: ArrayBuffer[BigInt] = ArrayBuffer()
+    val js: ArrayBuffer[Int] = ArrayBuffer()
+
     require(endBit >= startBit)
     for (j <- startBit to endBit) {
       // Wait for FIFO to become ready
@@ -84,14 +97,30 @@ object PacketDisAssemblerTestUtils {
       tester.poke(fifo.valid, 1)
       tester.poke(fifo.bits, writeData(j).litValue)
       tester.step(1)
+      if (tester.peek(outputByteFifo.valid) == 1) {
+        receivedOutputs += tester.peek(outputByteFifo.bits)
+      }
       if (j % 8 == 7) {
         val byte = checkData((j / 8) * 8 + 7, (j / 8) * 8)
-        tester.expect(outputByteFifo.bits, byte.litValue)
-        tester.expect(outputByteFifo.valid, 1)
-        println(s"j=$j\n${tester.peek(outputByteFifo.bits)}\t${tester.peek(byte)}")
+        expectedOutputs += byte.litValue
+        js += j
       }
     }
     tester.poke(fifo.valid, 0)
+
+    // Check the outputs
+    while (receivedOutputs.length < expectedOutputs.length) {
+      tester.step(1)
+      if (tester.peek(outputByteFifo.valid) == 1) {
+        receivedOutputs += tester.peek(outputByteFifo.bits)
+      }
+    }
+    (js zip receivedOutputs zip expectedOutputs).foreach {
+      case ((j, expected), received) => {
+        println(s"j=$j\n$received\t${expected}")
+        assert(expected == received)
+      }
+    }
   }
 
   /**
