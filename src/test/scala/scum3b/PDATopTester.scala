@@ -101,6 +101,8 @@ class PDATopTest(c: PDATopWrapper, armInput: Boolean = true) extends PeekPokeTes
     PacketDisAssemblerTestUtils.writeBitsToFIFOAndCheck(this, fifo = armFIFO, writeData = Testcase.wholepacket_rad_rev,
       startBit = 32, endBit = 47,
       outputByteFifo = dataOut, checkData = Testcase.wholepacket_dig_rev)
+  } else {
+    ???
   }
   step(1) // need an extra cycle before DMA_Length_o is valid
   expect(c.io.ARM_Length_o.bits, 16.U)
@@ -108,34 +110,34 @@ class PDATopTest(c: PDATopWrapper, armInput: Boolean = true) extends PeekPokeTes
   println(s"j=DMA_Length_o\n${peek(c.io.ARM_Length_o.bits)}\t16.U")
   step(1)
   poke(c.io.ARM_Length_o.ready, false.B)
-/*
+
   // PDU_PAYLOAD
-  PacketDisAssemblerTestUtils.writeBitsToFIFOAndCheck(this, fifo = c.io.AFIFO_Data_i, writeData = Testcase.wholepacket_rad_rev,
-    startBit = 48, endBit = 22 * 8 - 1,
-    outputByteFifo = c.io.DMA_Data_o, checkData = Testcase.wholepacket_dig_rev)
+  if (armInput) {
+    PacketDisAssemblerTestUtils.writeBitsToFIFOAndCheck(this, fifo = armFIFO, writeData = Testcase.wholepacket_rad_rev,
+      startBit = 48, endBit = 22 * 8 - 1,
+      outputByteFifo = dataOut, checkData = Testcase.wholepacket_dig_rev)
+  } else {
+    ???
+  }
 
   // CRC
-  PacketDisAssemblerTestUtils.writeBitsToFIFO(this, c.io.AFIFO_Data_i, data = Testcase.CRC_rad_rev, numBits = 24)
+  if (armInput) {
+    PacketDisAssemblerTestUtils.writeBitsToFIFO(this, armFIFO, data = Testcase.CRC_rad_rev, numBits = 24)
+  } else {
+    ???
+  }
 
-  step(2)
-  expect(c.io.DMA_Flag_CRC_o.bits, false.B)
-  expect(c.io.DMA_Flag_CRC_o.valid, true.B)
-  println(s"j=flagCRC_bits\n${peek(c.io.DMA_Flag_CRC_o.bits)}\tfalse")
-  println(s"j=flagCRC_valid\n${peek(c.io.DMA_Flag_CRC_o.valid)}\ttrue")
-
-  step(2)
-
-  poke(c.io.DMA_Flag_AA_o.ready, false.B)
-  poke(c.io.DMA_Flag_CRC_o.ready, false.B)
-
-*/
-  //todo: add FIFO
-  //todo: add invalid DMA
-  //todo: check output: DMA_ready
-
-  //todo: AA, CRC correct
-  //todo: DMA_Switch_i OFF
-  //todo: ready, valid always ON
+  // Wait until Flag_CRC is valid
+  var steps = 0
+  while (peek(c.io.ARM_Flag_CRC_o.valid) == 0) {
+    step(1)
+    steps += 1
+    assert(steps < 10)
+  }
+  expect(c.io.ARM_Flag_CRC_o.bits, false.B)
+  expect(c.io.ARM_Flag_CRC_o.valid, true.B)
+  println(s"j=flagCRC_bits\n${peek(c.io.ARM_Flag_CRC_o.bits)}\tfalse")
+  println(s"j=flagCRC_valid\n${peek(c.io.ARM_Flag_CRC_o.valid)}\ttrue")
 }
 
 class PDATopTester extends ChiselFlatSpec {
