@@ -34,6 +34,8 @@ class PDATopWrapper(debug: Boolean = false) extends Module {
 }
 
 class PDATop(debug: Boolean = false) extends UserModule {
+  override def desiredName = "ble_pdatop"
+
   val io = IO(new Bundle {
 
     // BLE PDA I/O
