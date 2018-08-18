@@ -7,6 +7,8 @@ import Whitening._
 
 
 class PacketDisAssembler extends Module {
+  override def desiredName = "ble_packetdisassembler"
+
   val io = IO(new Bundle {
     //DMA, REG
     val DMA_Switch_i = Input(Bool())
