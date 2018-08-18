@@ -7517,10 +7517,12 @@ module AsyncQueueSink( // @[:@4074.2]
 endmodule
 module AsyncQueue( // @[:@4184.2]
   input   io_enq_clock, // @[:@4187.4]
+  input   io_enq_reset, // @[:@4187.4]
   output  io_enq_ready, // @[:@4187.4]
   input   io_enq_valid, // @[:@4187.4]
   input   io_enq_bits, // @[:@4187.4]
   input   io_deq_clock, // @[:@4187.4]
+  input   io_deq_reset, // @[:@4187.4]
   input   io_deq_ready, // @[:@4187.4]
   output  io_deq_valid, // @[:@4187.4]
   output  io_deq_bits // @[:@4187.4]
@@ -8057,6 +8059,8 @@ module AsyncQueue( // @[:@4184.2]
   wire  sink_io_source_reset_n; // @[AsyncQueue.scala 156:22:@4196.4]
   wire  sink_io_ridx_valid; // @[AsyncQueue.scala 156:22:@4196.4]
   wire  sink_io_widx_valid; // @[AsyncQueue.scala 156:22:@4196.4]
+  wire  _T_17; // @[AsyncQueue.scala 163:29:@4204.4]
+  wire  _T_19; // @[AsyncQueue.scala 164:29:@4206.4]
   AsyncQueueSource source ( // @[AsyncQueue.scala 155:22:@4192.4]
     .clock(source_clock),
     .reset(source_reset),
@@ -8593,18 +8597,20 @@ module AsyncQueue( // @[:@4184.2]
     .io_ridx_valid(sink_io_ridx_valid),
     .io_widx_valid(sink_io_widx_valid)
   );
+  assign _T_17 = io_deq_reset == 1'h0; // @[AsyncQueue.scala 163:29:@4204.4]
+  assign _T_19 = io_enq_reset == 1'h0; // @[AsyncQueue.scala 164:29:@4206.4]
   assign io_enq_ready = source_io_enq_ready;
   assign io_deq_valid = sink_io_deq_valid;
   assign io_deq_bits = sink_io_deq_bits;
   assign source_clock = io_enq_clock;
-  assign source_reset = 1'h0;
+  assign source_reset = io_enq_reset;
   assign source_io_enq_valid = io_enq_valid;
   assign source_io_enq_bits = io_enq_bits;
   assign source_io_ridx = sink_io_ridx;
-  assign source_io_sink_reset_n = 1'h1;
+  assign source_io_sink_reset_n = _T_17;
   assign source_io_ridx_valid = sink_io_ridx_valid;
   assign sink_clock = io_deq_clock;
-  assign sink_reset = 1'h0;
+  assign sink_reset = io_deq_reset;
   assign sink_io_deq_ready = io_deq_ready;
   assign sink_io_widx = source_io_widx;
   assign sink_io_mem_0 = source_io_mem_0;
@@ -8863,7 +8869,7 @@ module AsyncQueue( // @[:@4184.2]
   assign sink_io_mem_253 = source_io_mem_253;
   assign sink_io_mem_254 = source_io_mem_254;
   assign sink_io_mem_255 = source_io_mem_255;
-  assign sink_io_source_reset_n = 1'h1;
+  assign sink_io_source_reset_n = _T_19;
   assign sink_io_widx_valid = source_io_widx_valid;
 endmodule
 module AsyncQueueSource_1( // @[:@5772.2]
@@ -14365,6 +14371,7 @@ module AsyncQueueSink_1( // @[:@7465.2]
 endmodule
 module AsyncQueue_1( // @[:@7575.2]
   input        io_enq_clock, // @[:@7578.4]
+  input        io_enq_reset, // @[:@7578.4]
   output       io_enq_ready, // @[:@7578.4]
   input        io_enq_valid, // @[:@7578.4]
   input  [7:0] io_enq_bits, // @[:@7578.4]
@@ -14905,6 +14912,7 @@ module AsyncQueue_1( // @[:@7575.2]
   wire  sink_io_source_reset_n; // @[AsyncQueue.scala 156:22:@7587.4]
   wire  sink_io_ridx_valid; // @[AsyncQueue.scala 156:22:@7587.4]
   wire  sink_io_widx_valid; // @[AsyncQueue.scala 156:22:@7587.4]
+  wire  _T_19; // @[AsyncQueue.scala 164:29:@7597.4]
   AsyncQueueSource_1 source ( // @[AsyncQueue.scala 155:22:@7583.4]
     .clock(source_clock),
     .reset(source_reset),
@@ -15441,11 +15449,12 @@ module AsyncQueue_1( // @[:@7575.2]
     .io_ridx_valid(sink_io_ridx_valid),
     .io_widx_valid(sink_io_widx_valid)
   );
+  assign _T_19 = io_enq_reset == 1'h0; // @[AsyncQueue.scala 164:29:@7597.4]
   assign io_enq_ready = source_io_enq_ready;
   assign io_deq_valid = sink_io_deq_valid;
   assign io_deq_bits = sink_io_deq_bits;
   assign source_clock = io_enq_clock;
-  assign source_reset = 1'h0;
+  assign source_reset = io_enq_reset;
   assign source_io_enq_valid = io_enq_valid;
   assign source_io_enq_bits = io_enq_bits;
   assign source_io_ridx = sink_io_ridx;
@@ -15711,7 +15720,7 @@ module AsyncQueue_1( // @[:@7575.2]
   assign sink_io_mem_253 = source_io_mem_253;
   assign sink_io_mem_254 = source_io_mem_254;
   assign sink_io_mem_255 = source_io_mem_255;
-  assign sink_io_source_reset_n = 1'h1;
+  assign sink_io_source_reset_n = _T_19;
   assign sink_io_widx_valid = source_io_widx_valid;
 endmodule
 module ble_pdatop( // @[:@17780.2]
@@ -15740,75 +15749,90 @@ module ble_pdatop( // @[:@17780.2]
   input         io_clk_CDR, // @[:@17781.4]
   input         io_reset_CDR, // @[:@17781.4]
   input         io_clk_PDA, // @[:@17781.4]
+  input         io_reset_PDA, // @[:@17781.4]
   input         io_clk_ARM // @[:@17781.4]
 );
-  wire  ble_packetdisassembler_clock; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_reset; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_io_DMA_Switch_i; // @[PDATop.scala 71:21:@17783.4]
-  wire [31:0] ble_packetdisassembler_io_REG_AA_i; // @[PDATop.scala 71:21:@17783.4]
-  wire [23:0] ble_packetdisassembler_io_REG_CRC_Seed_i; // @[PDATop.scala 71:21:@17783.4]
-  wire [6:0] ble_packetdisassembler_io_REG_DeWhite_Seed_i; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_io_DMA_Data_o_ready; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_io_DMA_Data_o_valid; // @[PDATop.scala 71:21:@17783.4]
-  wire [7:0] ble_packetdisassembler_io_DMA_Data_o_bits; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_io_DMA_Length_o_ready; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_io_DMA_Length_o_valid; // @[PDATop.scala 71:21:@17783.4]
-  wire [7:0] ble_packetdisassembler_io_DMA_Length_o_bits; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_io_DMA_Flag_AA_o_ready; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_io_DMA_Flag_AA_o_valid; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_io_DMA_Flag_AA_o_bits; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_io_DMA_Flag_CRC_o_ready; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_io_DMA_Flag_CRC_o_valid; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_io_DMA_Flag_CRC_o_bits; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_io_AFIFO_Data_i_ready; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_io_AFIFO_Data_i_valid; // @[PDATop.scala 71:21:@17783.4]
-  wire  ble_packetdisassembler_io_AFIFO_Data_i_bits; // @[PDATop.scala 71:21:@17783.4]
-  wire  AsyncQueue_io_enq_clock; // @[PDATop.scala 82:27:@17792.4]
-  wire  AsyncQueue_io_enq_ready; // @[PDATop.scala 82:27:@17792.4]
-  wire  AsyncQueue_io_enq_valid; // @[PDATop.scala 82:27:@17792.4]
-  wire  AsyncQueue_io_enq_bits; // @[PDATop.scala 82:27:@17792.4]
-  wire  AsyncQueue_io_deq_clock; // @[PDATop.scala 82:27:@17792.4]
-  wire  AsyncQueue_io_deq_ready; // @[PDATop.scala 82:27:@17792.4]
-  wire  AsyncQueue_io_deq_valid; // @[PDATop.scala 82:27:@17792.4]
-  wire  AsyncQueue_io_deq_bits; // @[PDATop.scala 82:27:@17792.4]
-  wire  AsyncQueue_1_io_enq_clock; // @[PDATop.scala 103:26:@17809.4]
-  wire  AsyncQueue_1_io_enq_ready; // @[PDATop.scala 103:26:@17809.4]
-  wire  AsyncQueue_1_io_enq_valid; // @[PDATop.scala 103:26:@17809.4]
-  wire [7:0] AsyncQueue_1_io_enq_bits; // @[PDATop.scala 103:26:@17809.4]
-  wire  AsyncQueue_1_io_deq_clock; // @[PDATop.scala 103:26:@17809.4]
-  wire  AsyncQueue_1_io_deq_ready; // @[PDATop.scala 103:26:@17809.4]
-  wire  AsyncQueue_1_io_deq_valid; // @[PDATop.scala 103:26:@17809.4]
-  wire [7:0] AsyncQueue_1_io_deq_bits; // @[PDATop.scala 103:26:@17809.4]
-  wire  AsyncQueue_2_io_enq_clock; // @[PDATop.scala 103:26:@17821.4]
-  wire  AsyncQueue_2_io_enq_ready; // @[PDATop.scala 103:26:@17821.4]
-  wire  AsyncQueue_2_io_enq_valid; // @[PDATop.scala 103:26:@17821.4]
-  wire [7:0] AsyncQueue_2_io_enq_bits; // @[PDATop.scala 103:26:@17821.4]
-  wire  AsyncQueue_2_io_deq_clock; // @[PDATop.scala 103:26:@17821.4]
-  wire  AsyncQueue_2_io_deq_ready; // @[PDATop.scala 103:26:@17821.4]
-  wire  AsyncQueue_2_io_deq_valid; // @[PDATop.scala 103:26:@17821.4]
-  wire [7:0] AsyncQueue_2_io_deq_bits; // @[PDATop.scala 103:26:@17821.4]
-  wire  AsyncQueue_3_io_enq_clock; // @[PDATop.scala 103:26:@17833.4]
-  wire  AsyncQueue_3_io_enq_ready; // @[PDATop.scala 103:26:@17833.4]
-  wire  AsyncQueue_3_io_enq_valid; // @[PDATop.scala 103:26:@17833.4]
-  wire  AsyncQueue_3_io_enq_bits; // @[PDATop.scala 103:26:@17833.4]
-  wire  AsyncQueue_3_io_deq_clock; // @[PDATop.scala 103:26:@17833.4]
-  wire  AsyncQueue_3_io_deq_ready; // @[PDATop.scala 103:26:@17833.4]
-  wire  AsyncQueue_3_io_deq_valid; // @[PDATop.scala 103:26:@17833.4]
-  wire  AsyncQueue_3_io_deq_bits; // @[PDATop.scala 103:26:@17833.4]
-  wire  AsyncQueue_4_io_enq_clock; // @[PDATop.scala 103:26:@17845.4]
-  wire  AsyncQueue_4_io_enq_ready; // @[PDATop.scala 103:26:@17845.4]
-  wire  AsyncQueue_4_io_enq_valid; // @[PDATop.scala 103:26:@17845.4]
-  wire  AsyncQueue_4_io_enq_bits; // @[PDATop.scala 103:26:@17845.4]
-  wire  AsyncQueue_4_io_deq_clock; // @[PDATop.scala 103:26:@17845.4]
-  wire  AsyncQueue_4_io_deq_ready; // @[PDATop.scala 103:26:@17845.4]
-  wire  AsyncQueue_4_io_deq_valid; // @[PDATop.scala 103:26:@17845.4]
-  wire  AsyncQueue_4_io_deq_bits; // @[PDATop.scala 103:26:@17845.4]
-  wire  _T_40_bits; // @[PDATop.scala 79:28:@17790.4]
-  wire  _T_48; // @[PDATop.scala 96:36:@17802.4]
-  wire  _T_40_valid; // @[PDATop.scala 79:28:@17790.4]
-  wire  _T_49; // @[PDATop.scala 97:37:@17804.4]
-  wire  _T_40_ready; // @[PDATop.scala 79:28:@17790.4]
-  ble_packetdisassembler ble_packetdisassembler ( // @[PDATop.scala 71:21:@17783.4]
+  reg  _T_38; // @[PDATop.scala 76:63:@17784.4]
+  reg [31:0] _RAND_0;
+  wire  ble_packetdisassembler_clock; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_reset; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_io_DMA_Switch_i; // @[PDATop.scala 80:21:@17789.4]
+  wire [31:0] ble_packetdisassembler_io_REG_AA_i; // @[PDATop.scala 80:21:@17789.4]
+  wire [23:0] ble_packetdisassembler_io_REG_CRC_Seed_i; // @[PDATop.scala 80:21:@17789.4]
+  wire [6:0] ble_packetdisassembler_io_REG_DeWhite_Seed_i; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_io_DMA_Data_o_ready; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_io_DMA_Data_o_valid; // @[PDATop.scala 80:21:@17789.4]
+  wire [7:0] ble_packetdisassembler_io_DMA_Data_o_bits; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_io_DMA_Length_o_ready; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_io_DMA_Length_o_valid; // @[PDATop.scala 80:21:@17789.4]
+  wire [7:0] ble_packetdisassembler_io_DMA_Length_o_bits; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_io_DMA_Flag_AA_o_ready; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_io_DMA_Flag_AA_o_valid; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_io_DMA_Flag_AA_o_bits; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_io_DMA_Flag_CRC_o_ready; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_io_DMA_Flag_CRC_o_valid; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_io_DMA_Flag_CRC_o_bits; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_io_AFIFO_Data_i_ready; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_io_AFIFO_Data_i_valid; // @[PDATop.scala 80:21:@17789.4]
+  wire  ble_packetdisassembler_io_AFIFO_Data_i_bits; // @[PDATop.scala 80:21:@17789.4]
+  wire  AsyncQueue_io_enq_clock; // @[PDATop.scala 91:27:@17798.4]
+  wire  AsyncQueue_io_enq_reset; // @[PDATop.scala 91:27:@17798.4]
+  wire  AsyncQueue_io_enq_ready; // @[PDATop.scala 91:27:@17798.4]
+  wire  AsyncQueue_io_enq_valid; // @[PDATop.scala 91:27:@17798.4]
+  wire  AsyncQueue_io_enq_bits; // @[PDATop.scala 91:27:@17798.4]
+  wire  AsyncQueue_io_deq_clock; // @[PDATop.scala 91:27:@17798.4]
+  wire  AsyncQueue_io_deq_reset; // @[PDATop.scala 91:27:@17798.4]
+  wire  AsyncQueue_io_deq_ready; // @[PDATop.scala 91:27:@17798.4]
+  wire  AsyncQueue_io_deq_valid; // @[PDATop.scala 91:27:@17798.4]
+  wire  AsyncQueue_io_deq_bits; // @[PDATop.scala 91:27:@17798.4]
+  wire  AsyncQueue_1_io_enq_clock; // @[PDATop.scala 114:26:@17820.4]
+  wire  AsyncQueue_1_io_enq_reset; // @[PDATop.scala 114:26:@17820.4]
+  wire  AsyncQueue_1_io_enq_ready; // @[PDATop.scala 114:26:@17820.4]
+  wire  AsyncQueue_1_io_enq_valid; // @[PDATop.scala 114:26:@17820.4]
+  wire [7:0] AsyncQueue_1_io_enq_bits; // @[PDATop.scala 114:26:@17820.4]
+  wire  AsyncQueue_1_io_deq_clock; // @[PDATop.scala 114:26:@17820.4]
+  wire  AsyncQueue_1_io_deq_ready; // @[PDATop.scala 114:26:@17820.4]
+  wire  AsyncQueue_1_io_deq_valid; // @[PDATop.scala 114:26:@17820.4]
+  wire [7:0] AsyncQueue_1_io_deq_bits; // @[PDATop.scala 114:26:@17820.4]
+  wire  AsyncQueue_2_io_enq_clock; // @[PDATop.scala 114:26:@17833.4]
+  wire  AsyncQueue_2_io_enq_reset; // @[PDATop.scala 114:26:@17833.4]
+  wire  AsyncQueue_2_io_enq_ready; // @[PDATop.scala 114:26:@17833.4]
+  wire  AsyncQueue_2_io_enq_valid; // @[PDATop.scala 114:26:@17833.4]
+  wire [7:0] AsyncQueue_2_io_enq_bits; // @[PDATop.scala 114:26:@17833.4]
+  wire  AsyncQueue_2_io_deq_clock; // @[PDATop.scala 114:26:@17833.4]
+  wire  AsyncQueue_2_io_deq_ready; // @[PDATop.scala 114:26:@17833.4]
+  wire  AsyncQueue_2_io_deq_valid; // @[PDATop.scala 114:26:@17833.4]
+  wire [7:0] AsyncQueue_2_io_deq_bits; // @[PDATop.scala 114:26:@17833.4]
+  wire  AsyncQueue_3_io_enq_clock; // @[PDATop.scala 114:26:@17846.4]
+  wire  AsyncQueue_3_io_enq_reset; // @[PDATop.scala 114:26:@17846.4]
+  wire  AsyncQueue_3_io_enq_ready; // @[PDATop.scala 114:26:@17846.4]
+  wire  AsyncQueue_3_io_enq_valid; // @[PDATop.scala 114:26:@17846.4]
+  wire  AsyncQueue_3_io_enq_bits; // @[PDATop.scala 114:26:@17846.4]
+  wire  AsyncQueue_3_io_deq_clock; // @[PDATop.scala 114:26:@17846.4]
+  wire  AsyncQueue_3_io_deq_reset; // @[PDATop.scala 114:26:@17846.4]
+  wire  AsyncQueue_3_io_deq_ready; // @[PDATop.scala 114:26:@17846.4]
+  wire  AsyncQueue_3_io_deq_valid; // @[PDATop.scala 114:26:@17846.4]
+  wire  AsyncQueue_3_io_deq_bits; // @[PDATop.scala 114:26:@17846.4]
+  wire  AsyncQueue_4_io_enq_clock; // @[PDATop.scala 114:26:@17859.4]
+  wire  AsyncQueue_4_io_enq_reset; // @[PDATop.scala 114:26:@17859.4]
+  wire  AsyncQueue_4_io_enq_ready; // @[PDATop.scala 114:26:@17859.4]
+  wire  AsyncQueue_4_io_enq_valid; // @[PDATop.scala 114:26:@17859.4]
+  wire  AsyncQueue_4_io_enq_bits; // @[PDATop.scala 114:26:@17859.4]
+  wire  AsyncQueue_4_io_deq_clock; // @[PDATop.scala 114:26:@17859.4]
+  wire  AsyncQueue_4_io_deq_reset; // @[PDATop.scala 114:26:@17859.4]
+  wire  AsyncQueue_4_io_deq_ready; // @[PDATop.scala 114:26:@17859.4]
+  wire  AsyncQueue_4_io_deq_valid; // @[PDATop.scala 114:26:@17859.4]
+  wire  AsyncQueue_4_io_deq_bits; // @[PDATop.scala 114:26:@17859.4]
+  wire  _T_40; // @[PDATop.scala 76:55:@17786.4]
+  wire  CDR_recovered_clk_edge; // @[PDATop.scala 76:52:@17787.4]
+  wire  _T_47_bits; // @[PDATop.scala 88:28:@17796.4]
+  wire  _T_55; // @[PDATop.scala 107:36:@17810.4]
+  wire  _T_47_valid; // @[PDATop.scala 88:28:@17796.4]
+  wire  _T_56; // @[PDATop.scala 108:37:@17812.4]
+  wire  _T_57; // @[PDATop.scala 109:54:@17814.4]
+  wire  _T_59; // @[PDATop.scala 110:57:@17816.4]
+  wire  _T_60; // @[PDATop.scala 110:53:@17817.4]
+  ble_packetdisassembler ble_packetdisassembler ( // @[PDATop.scala 80:21:@17789.4]
     .clock(ble_packetdisassembler_clock),
     .reset(ble_packetdisassembler_reset),
     .io_DMA_Switch_i(ble_packetdisassembler_io_DMA_Switch_i),
@@ -15831,18 +15855,21 @@ module ble_pdatop( // @[:@17780.2]
     .io_AFIFO_Data_i_valid(ble_packetdisassembler_io_AFIFO_Data_i_valid),
     .io_AFIFO_Data_i_bits(ble_packetdisassembler_io_AFIFO_Data_i_bits)
   );
-  AsyncQueue AsyncQueue ( // @[PDATop.scala 82:27:@17792.4]
+  AsyncQueue AsyncQueue ( // @[PDATop.scala 91:27:@17798.4]
     .io_enq_clock(AsyncQueue_io_enq_clock),
+    .io_enq_reset(AsyncQueue_io_enq_reset),
     .io_enq_ready(AsyncQueue_io_enq_ready),
     .io_enq_valid(AsyncQueue_io_enq_valid),
     .io_enq_bits(AsyncQueue_io_enq_bits),
     .io_deq_clock(AsyncQueue_io_deq_clock),
+    .io_deq_reset(AsyncQueue_io_deq_reset),
     .io_deq_ready(AsyncQueue_io_deq_ready),
     .io_deq_valid(AsyncQueue_io_deq_valid),
     .io_deq_bits(AsyncQueue_io_deq_bits)
   );
-  AsyncQueue_1 AsyncQueue_1 ( // @[PDATop.scala 103:26:@17809.4]
+  AsyncQueue_1 AsyncQueue_1 ( // @[PDATop.scala 114:26:@17820.4]
     .io_enq_clock(AsyncQueue_1_io_enq_clock),
+    .io_enq_reset(AsyncQueue_1_io_enq_reset),
     .io_enq_ready(AsyncQueue_1_io_enq_ready),
     .io_enq_valid(AsyncQueue_1_io_enq_valid),
     .io_enq_bits(AsyncQueue_1_io_enq_bits),
@@ -15851,8 +15878,9 @@ module ble_pdatop( // @[:@17780.2]
     .io_deq_valid(AsyncQueue_1_io_deq_valid),
     .io_deq_bits(AsyncQueue_1_io_deq_bits)
   );
-  AsyncQueue_1 AsyncQueue_2 ( // @[PDATop.scala 103:26:@17821.4]
+  AsyncQueue_1 AsyncQueue_2 ( // @[PDATop.scala 114:26:@17833.4]
     .io_enq_clock(AsyncQueue_2_io_enq_clock),
+    .io_enq_reset(AsyncQueue_2_io_enq_reset),
     .io_enq_ready(AsyncQueue_2_io_enq_ready),
     .io_enq_valid(AsyncQueue_2_io_enq_valid),
     .io_enq_bits(AsyncQueue_2_io_enq_bits),
@@ -15861,31 +15889,39 @@ module ble_pdatop( // @[:@17780.2]
     .io_deq_valid(AsyncQueue_2_io_deq_valid),
     .io_deq_bits(AsyncQueue_2_io_deq_bits)
   );
-  AsyncQueue AsyncQueue_3 ( // @[PDATop.scala 103:26:@17833.4]
+  AsyncQueue AsyncQueue_3 ( // @[PDATop.scala 114:26:@17846.4]
     .io_enq_clock(AsyncQueue_3_io_enq_clock),
+    .io_enq_reset(AsyncQueue_3_io_enq_reset),
     .io_enq_ready(AsyncQueue_3_io_enq_ready),
     .io_enq_valid(AsyncQueue_3_io_enq_valid),
     .io_enq_bits(AsyncQueue_3_io_enq_bits),
     .io_deq_clock(AsyncQueue_3_io_deq_clock),
+    .io_deq_reset(AsyncQueue_3_io_deq_reset),
     .io_deq_ready(AsyncQueue_3_io_deq_ready),
     .io_deq_valid(AsyncQueue_3_io_deq_valid),
     .io_deq_bits(AsyncQueue_3_io_deq_bits)
   );
-  AsyncQueue AsyncQueue_4 ( // @[PDATop.scala 103:26:@17845.4]
+  AsyncQueue AsyncQueue_4 ( // @[PDATop.scala 114:26:@17859.4]
     .io_enq_clock(AsyncQueue_4_io_enq_clock),
+    .io_enq_reset(AsyncQueue_4_io_enq_reset),
     .io_enq_ready(AsyncQueue_4_io_enq_ready),
     .io_enq_valid(AsyncQueue_4_io_enq_valid),
     .io_enq_bits(AsyncQueue_4_io_enq_bits),
     .io_deq_clock(AsyncQueue_4_io_deq_clock),
+    .io_deq_reset(AsyncQueue_4_io_deq_reset),
     .io_deq_ready(AsyncQueue_4_io_deq_ready),
     .io_deq_valid(AsyncQueue_4_io_deq_valid),
     .io_deq_bits(AsyncQueue_4_io_deq_bits)
   );
-  assign _T_40_bits = AsyncQueue_io_deq_bits; // @[PDATop.scala 79:28:@17790.4]
-  assign _T_48 = io_choose_data_src ? io_ARM_data_i_bits : _T_40_bits; // @[PDATop.scala 96:36:@17802.4]
-  assign _T_40_valid = AsyncQueue_io_deq_valid; // @[PDATop.scala 79:28:@17790.4]
-  assign _T_49 = io_choose_data_src ? io_ARM_data_i_valid : _T_40_valid; // @[PDATop.scala 97:37:@17804.4]
-  assign _T_40_ready = ble_packetdisassembler_io_AFIFO_Data_i_ready; // @[PDATop.scala 79:28:@17790.4]
+  assign _T_40 = _T_38 == 1'h0; // @[PDATop.scala 76:55:@17786.4]
+  assign CDR_recovered_clk_edge = io_CDR_recovered_clk & _T_40; // @[PDATop.scala 76:52:@17787.4]
+  assign _T_47_bits = AsyncQueue_io_deq_bits; // @[PDATop.scala 88:28:@17796.4]
+  assign _T_55 = io_choose_data_src ? io_ARM_data_i_bits : _T_47_bits; // @[PDATop.scala 107:36:@17810.4]
+  assign _T_47_valid = AsyncQueue_io_deq_valid; // @[PDATop.scala 88:28:@17796.4]
+  assign _T_56 = io_choose_data_src ? io_ARM_data_i_valid : _T_47_valid; // @[PDATop.scala 108:37:@17812.4]
+  assign _T_57 = ble_packetdisassembler_io_AFIFO_Data_i_ready & io_choose_data_src; // @[PDATop.scala 109:54:@17814.4]
+  assign _T_59 = io_choose_data_src == 1'h0; // @[PDATop.scala 110:57:@17816.4]
+  assign _T_60 = ble_packetdisassembler_io_AFIFO_Data_i_ready & _T_59; // @[PDATop.scala 110:53:@17817.4]
   assign io_ARM_Data_o_valid = AsyncQueue_1_io_deq_valid;
   assign io_ARM_Data_o_bits = AsyncQueue_1_io_deq_bits;
   assign io_ARM_Length_o_valid = AsyncQueue_2_io_deq_valid;
@@ -15894,9 +15930,9 @@ module ble_pdatop( // @[:@17780.2]
   assign io_ARM_Flag_AA_o_bits = AsyncQueue_3_io_deq_bits;
   assign io_ARM_Flag_CRC_o_valid = AsyncQueue_4_io_deq_valid;
   assign io_ARM_Flag_CRC_o_bits = AsyncQueue_4_io_deq_bits;
-  assign io_ARM_data_i_ready = ble_packetdisassembler_io_AFIFO_Data_i_ready;
-  assign ble_packetdisassembler_clock = io_clk_CDR;
-  assign ble_packetdisassembler_reset = io_reset_CDR;
+  assign io_ARM_data_i_ready = _T_57;
+  assign ble_packetdisassembler_clock = io_clk_PDA;
+  assign ble_packetdisassembler_reset = io_reset_PDA;
   assign ble_packetdisassembler_io_DMA_Switch_i = io_ARM_Switch_i;
   assign ble_packetdisassembler_io_REG_AA_i = io_ARM_AA_i;
   assign ble_packetdisassembler_io_REG_CRC_Seed_i = io_ARM_CRC_Seed_i;
@@ -15905,31 +15941,54 @@ module ble_pdatop( // @[:@17780.2]
   assign ble_packetdisassembler_io_DMA_Length_o_ready = AsyncQueue_2_io_enq_ready;
   assign ble_packetdisassembler_io_DMA_Flag_AA_o_ready = AsyncQueue_3_io_enq_ready;
   assign ble_packetdisassembler_io_DMA_Flag_CRC_o_ready = AsyncQueue_4_io_enq_ready;
-  assign ble_packetdisassembler_io_AFIFO_Data_i_valid = _T_49;
-  assign ble_packetdisassembler_io_AFIFO_Data_i_bits = _T_48;
+  assign ble_packetdisassembler_io_AFIFO_Data_i_valid = _T_56;
+  assign ble_packetdisassembler_io_AFIFO_Data_i_bits = _T_55;
   assign AsyncQueue_io_enq_clock = io_clk_CDR;
-  assign AsyncQueue_io_enq_valid = io_CDR_recovered_clk;
+  assign AsyncQueue_io_enq_reset = io_reset_CDR;
+  assign AsyncQueue_io_enq_valid = CDR_recovered_clk_edge;
   assign AsyncQueue_io_enq_bits = io_CDR_recovered_data;
   assign AsyncQueue_io_deq_clock = io_clk_PDA;
-  assign AsyncQueue_io_deq_ready = _T_40_ready;
+  assign AsyncQueue_io_deq_reset = io_reset_PDA;
+  assign AsyncQueue_io_deq_ready = _T_60;
   assign AsyncQueue_1_io_enq_clock = io_clk_PDA;
+  assign AsyncQueue_1_io_enq_reset = io_reset_PDA;
   assign AsyncQueue_1_io_enq_valid = ble_packetdisassembler_io_DMA_Data_o_valid;
   assign AsyncQueue_1_io_enq_bits = ble_packetdisassembler_io_DMA_Data_o_bits;
   assign AsyncQueue_1_io_deq_clock = io_clk_ARM;
   assign AsyncQueue_1_io_deq_ready = io_ARM_Data_o_ready;
   assign AsyncQueue_2_io_enq_clock = io_clk_PDA;
+  assign AsyncQueue_2_io_enq_reset = io_reset_PDA;
   assign AsyncQueue_2_io_enq_valid = ble_packetdisassembler_io_DMA_Length_o_valid;
   assign AsyncQueue_2_io_enq_bits = ble_packetdisassembler_io_DMA_Length_o_bits;
   assign AsyncQueue_2_io_deq_clock = io_clk_ARM;
   assign AsyncQueue_2_io_deq_ready = io_ARM_Length_o_ready;
   assign AsyncQueue_3_io_enq_clock = io_clk_PDA;
+  assign AsyncQueue_3_io_enq_reset = io_reset_PDA;
   assign AsyncQueue_3_io_enq_valid = ble_packetdisassembler_io_DMA_Flag_AA_o_valid;
   assign AsyncQueue_3_io_enq_bits = ble_packetdisassembler_io_DMA_Flag_AA_o_bits;
   assign AsyncQueue_3_io_deq_clock = io_clk_ARM;
+  assign AsyncQueue_3_io_deq_reset = 1'h0;
   assign AsyncQueue_3_io_deq_ready = io_ARM_Flag_AA_o_ready;
   assign AsyncQueue_4_io_enq_clock = io_clk_PDA;
+  assign AsyncQueue_4_io_enq_reset = io_reset_PDA;
   assign AsyncQueue_4_io_enq_valid = ble_packetdisassembler_io_DMA_Flag_CRC_o_valid;
   assign AsyncQueue_4_io_enq_bits = ble_packetdisassembler_io_DMA_Flag_CRC_o_bits;
   assign AsyncQueue_4_io_deq_clock = io_clk_ARM;
+  assign AsyncQueue_4_io_deq_reset = 1'h0;
   assign AsyncQueue_4_io_deq_ready = io_ARM_Flag_CRC_o_ready;
+`ifdef RANDOMIZE
+  integer initvar;
+  initial begin
+    `ifndef verilator
+      #0.002 begin end
+    `endif
+  `ifdef RANDOMIZE_REG_INIT
+  _RAND_0 = {1{$random}};
+  _T_38 = _RAND_0[0:0];
+  `endif // RANDOMIZE_REG_INIT
+  end
+`endif // RANDOMIZE
+  always @(posedge io_clk_CDR) begin
+    _T_38 <= io_CDR_recovered_clk;
+  end
 endmodule
