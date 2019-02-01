@@ -1,3 +1,22 @@
+<<<<<<< HEAD
+scalacOptions ++= Seq(
+  "-Xsource:2.11",
+  "-deprecation",
+  "-explaintypes",
+  "-feature",
+  "-language:reflectiveCalls",
+  "-Xcheckinit",
+  "-Xlint:infer-any",
+  "-Xlint:missing-interpolator",
+  "-Ywarn-unused:imports",
+  "-Ywarn-unused:locals",
+  "-Ywarn-value-discard",
+)
+
+libraryDependencies ++= Seq(
+  "edu.berkeley.cs" %% "rocket-dsptools" % "1.2-102318-SNAPSHOT"
+)
+=======
 def scalacOptionsVersion(scalaVersion: String): Seq[String] = {
   Seq() ++ {
     // If we're building with Scala > 2.11, enable the compile option
@@ -31,12 +50,19 @@ version := "3.0.0"
 scalaVersion := "2.11.11"
 
 crossScalaVersions := Seq("2.11.11", "2.12.3")
+>>>>>>> ble-baseband/master
 
 resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots"),
   Resolver.sonatypeRepo("releases")
 )
 
+<<<<<<< HEAD
+name := "ee290c"
+organization := "edu.berkeley.cs"
+version := "0.1-SNAPSHOT"
+scalaVersion := "2.12.6"
+=======
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
   "chisel3" -> "3.0.+",
@@ -49,3 +75,4 @@ libraryDependencies ++= (Seq("chisel3","chisel-iotesters").map {
 scalacOptions ++= scalacOptionsVersion(scalaVersion.value)
 
 javacOptions ++= javacOptionsVersion(scalaVersion.value)
+>>>>>>> ble-baseband/master
