@@ -87,7 +87,7 @@ Indicate the size of payload in bytes/octets. The length should be larger than 6
 
 There are three sections within the payload we used, which are advertising address and two advertising data (denoted as payload1 and payload2).
 #### Advertising Address
-Here defined the advertiser MAC address. In this project, AdvA is set to 0x90d7ebb19299. This should also follow LSB-first transmission order.
+The advertising address field contains the device address of the advertiser (BLE Spec Vol 6, Part B, Section 2.3.4.1). In this project, AdvA is set to 0x90d7ebb19299. This should also follow LSB-first transmission order.
 #### Advertising Data
 The payload1 is 0x02 (length), 0x01 (“flags”), 0x05 (flag data). The payload2 is 0x05 (length), type 0x08 (“short name”), data 0x32 0x39 0x30 0x43(ASCII code for “290C”).
 
