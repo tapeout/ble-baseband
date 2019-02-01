@@ -12,9 +12,6 @@ scalacOptions ++= Seq(
   "-Ywarn-value-discard",
 )
 
-libraryDependencies ++= Seq(
-  "edu.berkeley.cs" %% "rocket-dsptools" % "1.2-102318-SNAPSHOT"
-)
 def scalacOptionsVersion(scalaVersion: String): Seq[String] = {
   Seq() ++ {
     // If we're building with Scala > 2.11, enable the compile option
