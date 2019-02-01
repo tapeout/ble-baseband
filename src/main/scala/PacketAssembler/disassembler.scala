@@ -4,8 +4,6 @@ import chisel3._
 import chisel3.util._
 import CRC._
 import Whitening._
-import freechips.rocketchip.diplomacy.LazyModule
-import freechips.rocketchip.subsystem.BaseSubsystem
 
 class PDAInputBundle extends Bundle {
 	    val switch = Output(Bool())
@@ -42,14 +40,6 @@ class PacketDisAssemblerIO extends Bundle {
 
 object PacketDisAssemblerIO {
 	def apply(): PacketDisAssemblerIO = new PacketDisAssemblerIO
-}
-
-trait HasPeripheryPDA extends BaseSubsystem {
-  // instantiate cordic chain
-  val pdaChain = LazyModule(new PDAThing)
-  // connect memory interfaces to pbus
-  pbus.toVariableWidthSlave(Some("pdaWrite")) { pdaChain.writeQueue.mem.get }
-  pbus.toVariableWidthSlave(Some("pdaRead")) { pdaChain.readQueue.mem.get }
 }
 
 class PacketDisAssembler extends Module {

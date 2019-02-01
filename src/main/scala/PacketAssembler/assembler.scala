@@ -4,8 +4,7 @@ import chisel3._
 import chisel3.util._
 import CRC._
 import Whitening._
-import freechips.rocketchip.diplomacy.LazyModule
-import freechips.rocketchip.subsystem.BaseSubsystem
+
 
 
 class PAInputBundle extends Bundle {
@@ -44,13 +43,6 @@ object PacketAssemblerIO {
   def apply(): PacketAssemblerIO = new PacketAssemblerIO
 }	
 
-trait HasPeripheryPA extends BaseSubsystem {
-  // instantiate cordic chain
-  val paChain = LazyModule(new PAThing)
-  // connect memory interfaces to pbus
-  pbus.toVariableWidthSlave(Some("paWrite")) { paChain.writeQueue.mem.get }
-  pbus.toVariableWidthSlave(Some("paRead")) { paChain.readQueue.mem.get }
-}
 
 class PacketAssembler extends Module {
 
