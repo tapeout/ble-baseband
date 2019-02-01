@@ -1,9 +1,0 @@
-{
-  "vlsi.inputs.clocks": [
-    {
-      "name": "clock",
-      "period": "10 ns"
-    }
-  ]
-}
-
