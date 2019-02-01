@@ -1,7 +1,6 @@
 <<<<<<< HEAD
 # EE290C Bluetooth Low Energy Baseband
 
-[![Build Status](https://travis-ci.org/ucberkeley-ee290c/fa18-ble.svg?branch=master)](https://travis-ci.org/ucberkeley-ee290c/fa18-ble)
 
 This Documentation is for Bluetooth Low Energy (BLE) Baseband group work in EE290C @ UC Berkeley 2018 fall semester.
 
