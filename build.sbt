@@ -24,13 +24,13 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
   }
 }
 
-name := "chisel-module-template"
+name := "ble-baseband"
 
-version := "3.0.0"
+version := "1.0.0"
 
-scalaVersion := "2.11.11"
+scalaVersion := "2.12.4"
 
-crossScalaVersions := Seq("2.11.11", "2.12.3")
+crossScalaVersions := Seq("2.12.4", "2.11.12")
 
 resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots"),
@@ -39,9 +39,9 @@ resolvers ++= Seq(
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel3" -> "3.0.+",
-  "chisel-iotesters" -> "1.1.+"
-  )
+  "chisel3" -> "3.2-SNAPSHOT",
+  "chisel-iotesters" -> "1.2.+"
+)
 
 libraryDependencies ++= (Seq("chisel3","chisel-iotesters").map {
   dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep)) })
