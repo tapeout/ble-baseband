@@ -26,8 +26,8 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
 	//reset(3)
 
 //throughout packet
-	//poke(c.io.in.crc_seed,"b010101010101010101010101".U)
-	//poke(c.io.in.white_seed,"b1100101".U)
+	poke(c.io.in.bits.crcSeed,"b010101010101010101010101".U)
+	poke(c.io.in.bits.whiteSeed,"b1100101".U)
 
 //initialize
 	poke(c.io.in.bits.trigger,false.B)
