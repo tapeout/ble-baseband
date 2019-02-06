@@ -13,7 +13,7 @@ import chisel3.iotesters.{PeekPokeTester, Driver, ChiselFlatSpec}
 
 class Serial_CRCTests(c: Serial_CRC) extends PeekPokeTester(c) {
 
-/*
+
 val goldenModel = new SoftwareGoldenModel()
 
    for (i <- 1 to 100) {
@@ -21,8 +21,8 @@ val goldenModel = new SoftwareGoldenModel()
       val seed_int = r1.nextInt(16777215) // 2^24-1
 
 
-      //val seed_string =  String.format("%24d", seed_int.toBinaryString)//.toInt.asInstanceOf[Object])
-      val seed_string = seed_int.toBinaryString;
+      val seed_string =  String.format("%24s", seed_int.toBinaryString).replace(" ", "0")//.toInt.asInstanceOf[Object])
+      //val seed_string = seed_int.toBinaryString
       //reverse(seed_string)
       println("Test Number " + i + ": Seed = " + seed_string)
 
@@ -64,7 +64,7 @@ val goldenModel = new SoftwareGoldenModel()
          step(1) 
       }
    }
-*/
+
 
 
 
