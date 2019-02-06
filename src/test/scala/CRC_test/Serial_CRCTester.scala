@@ -1,4 +1,4 @@
-package CRCTest
+package CRC.test
 
 import CRC._
 import SoftwareGoldenModel._

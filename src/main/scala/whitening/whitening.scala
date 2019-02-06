@@ -12,7 +12,7 @@ class Whitening extends Module {
         val init     = Input(Bool())        // to init the seed
   })
 
-    val whitening_lfsr = Reg(init = 0.U(7.W)) // 1+x^4+x^7;
+    val whitening_lfsr = RegInit(0.U(7.W)) // 1+x^4+x^7;
     val inv           = whitening_lfsr(0)
 
     val output_bit = Wire(UInt(1.W))

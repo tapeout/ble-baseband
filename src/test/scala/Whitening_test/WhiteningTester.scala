@@ -1,4 +1,4 @@
-package WhiteningTest
+package Whitening.test
 
 import SoftwareGoldenModel._
 import Whitening._

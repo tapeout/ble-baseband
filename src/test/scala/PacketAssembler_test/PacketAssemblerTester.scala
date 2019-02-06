@@ -1,4 +1,4 @@
-package PacketAssemblerTest
+package PacketAssembler.test
 
 import PacketAssembler._
 import chisel3._
