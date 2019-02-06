@@ -355,8 +355,7 @@ class PacketDisAssembler extends Module {
   crc_inst.io.init := crc_reset
   crc_inst.io.operand.bits := crc_data
   crc_inst.io.operand.valid := crc_valid
-  crc_result := crc_inst.io.result.bits
-  crc_inst.io.result.ready := true.B
+  crc_result := crc_inst.io.result
   crc_inst.io.seed := crc_seed
 
   //whitening instantiate

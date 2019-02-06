@@ -53,7 +53,7 @@ val goldenModel = new SoftwareGoldenModel()
          var res = goldenModel.Crc_sw(false,Din,out)
          out = res
          //s = res._2
-         var hardware_result = peek(c.io.result.bits)
+         var hardware_result = peek(c.io.result)
          println(s"Hardware Output = ${hardware_result.toString.toInt}")
 
          var buf = Array.ofDim[Int](24)
@@ -63,42 +63,7 @@ val goldenModel = new SoftwareGoldenModel()
          //expect(c.io.result.valid, true.B)
          step(1) 
       }
-   }
-
-
-
-
-
-// =====================================================================
-// hard-coded test
-   poke(c.io.init,true.B)
-   poke(c.io.seed,"h00000f".U)
-   poke(c.io.operand.valid,false.B)
-   step(1)
-
-   poke(c.io.init,false.B)
-
-
-   expect(c.io.result.bits, "hf00000".U)
-   expect(c.io.result.valid, true.B)
-
-   step(1)
-   poke(c.io.init,true.B)
-   poke(c.io.seed,"h000000".U)
-   poke(c.io.operand.valid,false.B)
-
-   step(1)
-   poke(c.io.init,false.B)
-
-   poke(c.io.operand.bits, "b1".U)
-   poke(c.io.operand.valid,true.B)
-
-   step(1)
-   expect(c.io.result.bits, "b1101_1010_0110_0000_0000_0000".U)
-   expect(c.io.result.valid, true.B)
-
-
-   step(2)
+   } 
 }
 
 class Serial_CRCTester extends ChiselFlatSpec {

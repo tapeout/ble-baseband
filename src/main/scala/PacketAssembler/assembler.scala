@@ -283,8 +283,7 @@ class PacketAssembler extends Module {
 	serial_crc.io.init := crc_reset
 	serial_crc.io.operand.bits := crc_data
 	serial_crc.io.operand.valid := crc_valid
-	crc_result := serial_crc.io.result.bits
-	serial_crc.io.result.ready := true.B
+	crc_result := serial_crc.io.result
 	serial_crc.io.seed := crc_seed
 
 	//Instantiate Whitening Module
