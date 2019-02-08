@@ -9,7 +9,7 @@ scalacOptions ++= Seq(
   "-Xlint:missing-interpolator",
   "-Ywarn-unused:imports",
   "-Ywarn-unused:locals",
-  "-Ywarn-value-discard",
+  "-Ywarn-value-discard"
 )
 
 libraryDependencies ++= Seq(

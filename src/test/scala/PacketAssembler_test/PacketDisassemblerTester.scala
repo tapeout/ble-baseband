@@ -223,8 +223,6 @@
 
 //   poke(c.io.out.ready, false.B)
 //   //poke(c.io.out.ready, false.B)
-
-
 //   //todo: add FIFO
 //   //todo: add invalid DMA
 //   //todo: check output: DMA_ready
