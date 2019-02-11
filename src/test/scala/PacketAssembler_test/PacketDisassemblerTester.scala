@@ -1,244 +1,184 @@
-// package PacketDisAssembler.test
+package PacketDisAssembler.test
 
-// import PacketDisAssembler._
-// import scala.collection.mutable.ArrayBuffer
-// import chisel3._
-// import chisel3.util._
-// import chisel3.iotesters.{PeekPokeTester, Driver, ChiselFlatSpec}
+import PacketDisAssembler._
+import chisel3._
+import chisel3.util._
+import chisel3.iotesters.{PeekPokeTester, Driver, ChiselFlatSpec}
 
-// /**
-//   * Helper functions to make testing the packet disassembler easier.
-//   */
-// object PacketDisAssemblerTestUtils {
+class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
 
-//   /**
-//     * Constants related to testing the packet disassembler.
-//     * Contains some random data, pre-preamble, preamble, and a whole BLE packet.
-//     */
-//   object Testcase {
-//     //hard-coded David's test
-//     //LSB-MSB
-//     val wholepacket_dig = "b01101011011111011001000101110001_0100000000001000_011000110000000101001100010011100100000000000000_01000000100000001010000001100000000100001100101011000010101010101011001011001100".U
-//     val wholepacket_rad = "b01101011011111011001000101110001_1111000101000011_100010011000010011110000101010110010011000001101_11101110000011000010100001110010011110010010010011011101011011011101000001011011".U
-//     //---------------------_--------------AA----------------_---PDU header---_-----------PDU advertiser address---------------_-----------------PDU data1 and data2--------------------------------------------
-//     val pre_preamble = "b000111".U
-//     //pre-preamble
-//     val preamble = "b01010101".U
-//     val AA = "b01101011011111011001000101110001".U
-//     val CRC_rad = "b001101000100101101101110".U
+  val data_preamble = "h55".U//2,8
+  val data_AA = "h6B7D9171".U//8,32
+  val data_AA_rec = "h8E89BED6".U
+  val data_pduH = "hF1BB".U//4,16
+  val data_pduH_rec = "h0F02".U
+  val data_pduAA = "h8984F0AB260D".U//12,48
+  val data_pduAA_rec = "h0002723280C6".U
+  val data_pduData1 = "hEE0C28B279".U//10,40
+  val data_pduData1_rec = "h0805050102".U
+  val data_pduData2 = "hA283CBA0".U//8,32
+  val data_pduData2_rec = "h43303932".U
+  val data_crc = "h748AAD".U//6,24
+  val data_crc_rec = "h65FAC7".U
 
-//     //MSB-LSB
-//     val wholepacket_dig_rev = "b00110011010011010101010101000011010100110000100000000110000001010000000100000010000000000000001001110010001100101000000011000110000100000000001010001110100010011011111011010110".U
-//     val wholepacket_rad_rev = "b11011010000010111011011010111011001001001001111001001110000101000011000001110111101100000110010011010101000011110010000110010001110000101000111110001110100010011011111011010110".U
 
-//     val random_sequence_rev = "hf7293742343023801b".U
-//     //72 bits//note not to poke preamble here
-//     val pre_preamble_rev = "b111000".U
-//     val preamble_rev = "b10101010".U
-//     val AA_rev = "b10001110100010011011111011010110".U
-//     val CRC_rad_rev = "b011101101101001000101100".U
+  //reset
+  //reset(3)
 
-//     val CRC_Seed = "b010101010101010101010101".U
-//     val DeWhite_Seed = "b1100101".U
-//   }
+  //throughout packet
+  //poke(c.io.in.bits.crcSeed, "b010101010101010101010101".U)
+  //poke(c.io.in.bits.whiteSeed, "b1100101".U)
 
-//   /**
-//     * Write a given number of bits to the given FIFO.
-//     * @param tester PeekPokeTester to use
-//     * @param fifo A Decoupled(UInt(1.W))
-//     * @param data UInt literal containing data to write
-//     * @param numBits Number of bits to write
-//     */
-//   def writeBitsToFIFO[T <: Module](tester: PeekPokeTester[T], fifo: DecoupledIO[PDAInputBundle], data: UInt, numBits: Int): Unit = {
-//     for (j <- 0 to numBits - 1) {
-//       // Wait for FIFO to become ready
-//       var count = 0
-//       while (tester.peek(fifo.ready) == 0) {
-//         if (count > 100) {
-//           println("Taking too long to become ready")
-//           tester.finish
-//         }
-//         tester.step(1)
-//         count += 1
-//       }
-//       tester.poke(fifo.valid, 1)
-//       tester.poke(fifo.bits.data, data(j).litValue)
-//       tester.step(1)
-//     }
-//     tester.poke(fifo.valid, 0)
-//   }
+  //initialize
+  poke(c.io.in.bits.switch, false.B)
+  poke(c.io.in.valid, false.B)
+  poke(c.io.in.bits.data, 0.U)
+  poke(c.io.out.ready, false.B)
 
-//   /**
-//     * Write a given range of bits to the FIFO.
-//     * @param tester PeekPokeTester to use
-//     * @param fifo A Decoupled(UInt(1.W))
-//     * @param writeData UInt literal containing data to write
-//     * @param startBit Bit to start at (e.g. 0), inclusive
-//     * @param endBit Bit to end at (e.g. 7), inclusive
-//     * @param outputByteFifo Output byte FIFO to read from to check
-//     * @param checkData Data with which to check output byte FIFO
-//     */
-//   def writeBitsToFIFOAndCheck[T <: Module](tester: PeekPokeTester[T],
-//                                            fifo: DecoupledIO[PDAInputBundle], writeData: UInt,
-//                                            startBit: Int, endBit: Int,
-//                                            outputByteFifo: DecoupledIO[PDAOutputBundle], checkData: UInt): Unit = {
-//     // Keep track of received vs. expected outputs separately since there may be some delays
-//     // between when the output is sent vs received.
-//     val receivedOutputs: ArrayBuffer[BigInt] = ArrayBuffer()
-//     val expectedOutputs: ArrayBuffer[BigInt] = ArrayBuffer()
-//     val js: ArrayBuffer[Int] = ArrayBuffer()
+  step(2)
 
-//     require(endBit >= startBit)
-//     for (j <- startBit to endBit) {
-//       // Wait for FIFO to become ready
-//       while (tester.peek(fifo.ready) == 0) {
-//         tester.step(1)
-//       }
-//       tester.poke(fifo.valid, 1)
-//       tester.poke(fifo.bits.data, writeData(j).litValue)
-//       tester.step(1)
-//       if (tester.peek(outputByteFifo.valid) == 1) {
-//         receivedOutputs += tester.peek(outputByteFifo.bits.asUInt)
-//       }
-//       if (j % 8 == 7) {
-//         val byte = checkData((j / 8) * 8 + 7, (j / 8) * 8)
-//         expectedOutputs += byte.litValue
-//         js += j
-//       }
-//     }
-//     tester.poke(fifo.valid, 0)
+  //trigger
+  poke(c.io.in.bits.switch, true.B)
+  poke(c.io.in.bits.data, 0.U) 
+  poke(c.io.in.valid, true.B)
+  step(1)
+  poke(c.io.in.bits.switch, false.B)
 
-//     // Check the outputs
-//     while (receivedOutputs.length < expectedOutputs.length) {
-//       tester.step(1)
-//       if (tester.peek(outputByteFifo.valid) == 1) {
-//         receivedOutputs += tester.peek(outputByteFifo.bits.asUInt())
-//       }
-//     }
-//     (js zip receivedOutputs zip expectedOutputs).foreach {
-//       case ((j, expected), received) => {
-//         println(s"j=$j\n$received\t${expected}")
-//         assert(expected == received)
-//       }
-//     }
-//   }
+  //PREAMBLE
+  var j: Int = 0
+  for (j <- 0 to 7) {
+    //step(Random_Num(1,100))
+    poke(c.io.out.ready, true.B)
+    poke(c.io.in.bits.data, data_preamble(7-j)) //note: U to B
+    expect(c.io.out.valid, false.B)
+    step(1)
+    poke(c.io.out.ready, false.B)
+  }
+  poke(c.io.in.valid, false.B)
+  step(10)
 
-//   /**
-//     * Set some constants that need to be in place throughout the whole test.
-//     */
-//   def setRegisterConstants[T <: Module](tester: PeekPokeTester[T],
-//                                         aa: UInt, aaConst: BigInt,
-//                                         crcSeed: UInt, crcSeedConst: BigInt,
-//                                         dewhiteSeed: UInt, dewhiteSeedConst: BigInt): Unit = {
-//     tester.poke(aa, aaConst)
-//     tester.poke(crcSeed, crcSeedConst)
-//     tester.poke(dewhiteSeed, dewhiteSeedConst)
-//   }
-// }
+  //AA
+  for (j <- 0 to 31) {
+    
+    poke(c.io.in.bits.data, data_AA(31-j))
+    poke(c.io.in.valid, true.B)
+    poke(c.io.out.ready, true.B)
+    if(j % 8 == 7) {
+        step(1)
+        poke(c.io.in.valid, false.B)
+        expect(c.io.out.bits.data, data_AA_rec(j, j-7))
+        println(s"j="+j+s"\n${peek(c.io.out.bits.data)}\t${peek(data_AA_rec(j, j-7))}")  
+    }
+    step(1)
+    poke(c.io.out.ready, false.B)
+  }
+  poke(c.io.in.valid, false.B)
+  step(10)
 
-// class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
-//   import PacketDisAssemblerTestUtils.Testcase
+  //PDU_HEADER
+  for (j <- 0 to 15) {
 
-//   // Constants that remain throughout packet disassembly
-//   PacketDisAssemblerTestUtils.setRegisterConstants(this,
-//     c.reg_aa, Testcase.AA_rev.litValue,
-//     c.reg_crc_seed, Testcase.CRC_Seed.litValue,
-//     c.reg_dewhite_seed, Testcase.DeWhite_Seed.litValue
-//   )
+    poke(c.io.in.bits.data, data_pduH(15-j))
+    poke(c.io.in.valid, true.B)
+    poke(c.io.out.ready, true.B)
+    if(j % 8 == 7) {
+        step(1)
+        poke(c.io.in.valid, false.B)
+        expect(c.io.out.bits.data, data_pduH_rec(j, j-7))
+        println(s"j="+j+s"\n${peek(c.io.out.bits.data)}\t${peek(data_pduH_rec(j, j-7))}")
+    }
+    step(1)
+    poke(c.io.out.ready, false.B)
+  }
+  poke(c.io.in.valid, false.B)
+  step(10)
 
-//   //initialize
-//   poke(c.io.in.bits.switch, false.B)
+  //PDU_AA
+  for (j <- 0 to 47) {
 
-//   poke(c.io.out.ready, false.B)
-//   //poke(c.io.out.ready, false.B)
-//   //poke(c.io.out.ready, false.B)
-//   //poke(c.io.out.ready, false.B)
+    poke(c.io.in.bits.data, data_pduAA(47-j))
+    poke(c.io.in.valid, true.B)
+    poke(c.io.out.ready, true.B)
+    if(j % 8 == 7) {
+        step(1)
+        poke(c.io.in.valid, false.B)
+        expect(c.io.out.bits.data, data_pduAA_rec(j, j-7))
+        println(s"j="+j+s"\n${peek(c.io.out.bits.data)}\t${peek(data_pduAA_rec(j, j-7))}")
+    }
+    step(1)
+    poke(c.io.out.ready, false.B)
+  }
+  poke(c.io.in.valid, false.B)
+  step(10)
 
-//   poke(c.io.in.valid, false.B)
-//   poke(c.io.in.bits.data, 0.U)
+//PDU Data 1
+  for (j <- 0 to 39) {
 
-//   step(2)
+    poke(c.io.in.bits.data, data_pduData1(39-j))
+    poke(c.io.in.valid, true.B)
+    poke(c.io.out.ready, true.B)
+    if(j % 8 == 7) {
+        step(1)
+        poke(c.io.in.valid, false.B)
+        expect(c.io.out.bits.data, data_pduData1_rec(j, j-7))
+        println(s"j="+j+s"\n${peek(c.io.out.bits.data)}\t${peek(data_pduData1_rec(j, j-7))}")
+    }
+    step(1)
+    poke(c.io.out.ready, false.B)
+  }
+  poke(c.io.in.valid, false.B)
+  step(10)
 
-//   //start of receiving packet
-//   poke(c.io.in.bits.switch, true.B)
+//PDU Data 2
+  for (j <- 0 to 31) {
 
-//   poke(c.io.out.ready, true.B)
-//   //poke(c.io.out.ready, true.B)
-//   //poke(c.io.out.ready, true.B)
-//   //poke(c.io.out.ready, true.B)
+    poke(c.io.in.bits.data, data_pduData2(31-j))
+    poke(c.io.in.valid, true.B)
+    poke(c.io.out.ready, true.B)
+    if(j % 8 == 7) {
+        step(1)
+        poke(c.io.in.valid, false.B)
+        expect(c.io.out.bits.data, data_pduData2_rec(j, j-7))
+        println(s"j="+j+s"\n${peek(c.io.out.bits.data)}\t${peek(data_pduData2_rec(j, j-7))}")
+    }    
+    step(1)
+    poke(c.io.out.ready, false.B)
+  }
+  poke(c.io.in.valid, false.B)
+  step(10)
 
-//   poke(c.io.in.valid, false.B)
-//   poke(c.io.in.bits.data, 0.U)
+  //CRC
+  for (j <- 0 to 23) {
 
-//   // Random sequence before pre_preamble
-//   PacketDisAssemblerTestUtils.writeBitsToFIFO(this, c.io.in, data = Testcase.random_sequence_rev, numBits = 72)
+    poke(c.io.in.bits.data, data_crc(23-j))
+    poke(c.io.in.valid, true.B)
+    poke(c.io.out.ready, true.B)
+    if(j % 8 == 7) {
+        step(1)
+        poke(c.io.in.valid, false.B)
+        expect(c.io.out.bits.data, data_crc_rec(j, j-7))
+        println(s"j="+j+s"\n${peek(c.io.out.bits.data)}\t${peek(data_crc_rec(j, j-7))}")
+    }    
+    step(1)
+    poke(c.io.out.ready, false.B)
+  }
+  poke(c.io.in.valid, false.B)
+  step(10)
 
-//   // pre_preamble
-//   PacketDisAssemblerTestUtils.writeBitsToFIFO(this, c.io.in, data = Testcase.pre_preamble_rev, numBits = 6)
-//   expect(c.io.out.valid, false.B) //note
-//   println(s"after random_sequence\n${peek(c.io.out.bits.data)}\t0.U")
+  expect(c.io.out.bits.done, true.B) //note
+  //todo: add FIFO
+  //todo: add invalid DMA
+  //todo: check output: DMA_ready
 
-//   // PREAMBLE
-//   PacketDisAssemblerTestUtils.writeBitsToFIFO(this, c.io.in, data = Testcase.preamble_rev, numBits = 8)
-//   expect(c.io.out.valid, false.B) //note
-//   println(s"after preamble\n${peek(c.io.out.valid)}\tfalse")
+}
 
-//   // AA
-//   PacketDisAssemblerTestUtils.writeBitsToFIFOAndCheck(this, fifo = c.io.in, writeData = Testcase.wholepacket_rad_rev,
-//     startBit = 0, endBit = 31,
-//     outputByteFifo = c.io.out, checkData = Testcase.wholepacket_dig_rev)
-//   step(1) // need an extra cycle for out.flag_aa to be valid
-//   expect(c.io.out.bits.flag_aa, false.B)
-//   expect(c.io.out.bits.flag_aa_valid, true.B)
-//   println(s"j=flagAA\n${peek(c.io.out.bits.flag_aa)}\ttrue")
-//   println(s"j=flagAA\n${peek(c.io.out.bits.flag_aa_valid)}\ttrue")
-
-//   // PDU_HEADER
-//   PacketDisAssemblerTestUtils.writeBitsToFIFOAndCheck(this, fifo = c.io.in, writeData = Testcase.wholepacket_rad_rev,
-//     startBit = 32, endBit = 47,
-//     outputByteFifo = c.io.out, checkData = Testcase.wholepacket_dig_rev)
-//   step(1) // need an extra cycle before out.length is valid
-//   expect(c.io.out.bits.length, 16.U)
-//   expect(c.io.out.bits.length_valid, true.B)
-//   println(s"j=out.length\n${peek(c.io.out.bits.length)}\t16.U")
-
-//   step(1)
-//   poke(c.io.out.ready, false.B)
-
-//   // PDU_PAYLOAD
-//   PacketDisAssemblerTestUtils.writeBitsToFIFOAndCheck(this, fifo = c.io.in, writeData = Testcase.wholepacket_rad_rev,
-//     startBit = 48, endBit = 22 * 8 - 1,
-//     outputByteFifo = c.io.out, checkData = Testcase.wholepacket_dig_rev)
-
-//   // CRC
-//   PacketDisAssemblerTestUtils.writeBitsToFIFO(this, c.io.in, data = Testcase.CRC_rad_rev, numBits = 24)
-
-//   step(2)
-//   expect(c.io.out.bits.flag_crc, false.B)
-//   expect(c.io.out.bits.flag_crc_valid, true.B)
-//   println(s"j=flagCRC_bits\n${peek(c.io.out.bits.flag_crc)}\tfalse")
-//   println(s"j=flagCRC_valid\n${peek(c.io.out.bits.flag_crc_valid)}\ttrue")
-
-//   step(2)
-
-//   poke(c.io.out.ready, false.B)
-//   //poke(c.io.out.ready, false.B)
-//   //todo: add FIFO
-//   //todo: add invalid DMA
-//   //todo: check output: DMA_ready
-
-//   //todo: AA, CRC correct
-//   //todo: in.switch OFF
-//   //todo: ready, valid always ON
-// }
-
-// class PacketDisAssemblerTester extends ChiselFlatSpec {
-//   behavior of "PacketDisAssembler"
-//   backends foreach { backend =>
-//     it should s"perform correct operation as an packet disassembler $backend" in {
-//       Driver(() => new PacketDisAssembler, "verilator") {
-//         (c) => new PacketDisAssemblerTest(c)
-//       } should be(true)
-//     }
-//   }
-// }
+class PacketDisAssemblerTester extends ChiselFlatSpec {
+  behavior of "PacketDisAssembler"
+  backends foreach { backend =>
+    it should s"perform correct operation as an packet disassembler $backend" in {
+      Driver(() => new PacketDisAssembler, "verilator") { (c) =>
+        new PacketDisAssemblerTest(c)
+      } should be(true)
+    }
+  }
+}
