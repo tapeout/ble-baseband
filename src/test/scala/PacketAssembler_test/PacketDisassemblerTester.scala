@@ -7,18 +7,18 @@ import chisel3.iotesters.{PeekPokeTester, Driver, ChiselFlatSpec}
 
 class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
 
-  val data_preamble = "h55".U//2,8
-  val data_AA = "h6B7D9171".U//8,32
+  val data_preamble = "h55".U
+  val data_AA = "h6B7D9171".U
   val data_AA_rec = "h8E89BED6".U
-  val data_pduH = "hF1BB".U//4,16
+  val data_pduH = "hF1BB".U
   val data_pduH_rec = "h0F02".U
-  val data_pduAA = "h8984F0AB260D".U//12,48
+  val data_pduAA = "h8984F0AB260D".U
   val data_pduAA_rec = "h0002723280C6".U
-  val data_pduData1 = "hEE0C28B279".U//10,40
+  val data_pduData1 = "hEE0C28B279".U
   val data_pduData1_rec = "h0805050102".U
-  val data_pduData2 = "hA283CBA0".U//8,32
+  val data_pduData2 = "hA283CBA0".U
   val data_pduData2_rec = "h43303932".U
-  val data_crc = "h748AAD".U//6,24
+  val data_crc = "h748AAD".U
   val data_crc_rec = "h65FAC7".U
 
 
@@ -45,9 +45,7 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   poke(c.io.in.bits.switch, false.B)
 
   //PREAMBLE
-  var j: Int = 0
   for (j <- 0 to 7) {
-    //step(Random_Num(1,100))
     poke(c.io.out.ready, true.B)
     poke(c.io.in.bits.data, data_preamble(7-j)) //note: U to B
     expect(c.io.out.valid, false.B)
@@ -58,8 +56,7 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   step(10)
 
   //AA
-  for (j <- 0 to 31) {
-    
+  for (j <- 0 to 31) {    
     poke(c.io.in.bits.data, data_AA(31-j))
     poke(c.io.in.valid, true.B)
     poke(c.io.out.ready, true.B)
@@ -77,7 +74,6 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
 
   //PDU_HEADER
   for (j <- 0 to 15) {
-
     poke(c.io.in.bits.data, data_pduH(15-j))
     poke(c.io.in.valid, true.B)
     poke(c.io.out.ready, true.B)
@@ -95,7 +91,6 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
 
   //PDU_AA
   for (j <- 0 to 47) {
-
     poke(c.io.in.bits.data, data_pduAA(47-j))
     poke(c.io.in.valid, true.B)
     poke(c.io.out.ready, true.B)
@@ -113,7 +108,6 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
 
 //PDU Data 1
   for (j <- 0 to 39) {
-
     poke(c.io.in.bits.data, data_pduData1(39-j))
     poke(c.io.in.valid, true.B)
     poke(c.io.out.ready, true.B)
@@ -131,7 +125,6 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
 
 //PDU Data 2
   for (j <- 0 to 31) {
-
     poke(c.io.in.bits.data, data_pduData2(31-j))
     poke(c.io.in.valid, true.B)
     poke(c.io.out.ready, true.B)
@@ -149,7 +142,6 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
 
   //CRC
   for (j <- 0 to 23) {
-
     poke(c.io.in.bits.data, data_crc(23-j))
     poke(c.io.in.valid, true.B)
     poke(c.io.out.ready, true.B)
@@ -165,7 +157,7 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   poke(c.io.in.valid, false.B)
   step(10)
 
-  expect(c.io.out.bits.done, true.B) //note
+  expect(c.io.out.bits.done, true.B)
   //todo: add FIFO
   //todo: add invalid DMA
   //todo: check output: DMA_ready
