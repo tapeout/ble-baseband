@@ -143,29 +143,31 @@ class PacketAssembler extends Module {
   }
 
   //State Transition with counter updates
-  when (state === idle) {
-    when (io.in.bits.trigger === true.B && io.in.valid) {
-      state := preamble
-      counter := 0.U
-      counter_byte := 0.U
-    } .otherwise {
-      state := idle
-    }
-  } .elsewhen (state === preamble) {
+  switch(state) { 
+    is(idle) {
+      when (io.in.bits.trigger === true.B && io.in.valid) {
+        state := preamble
+        counter := 0.U
+        counter_byte := 0.U
+      }.otherwise {
+        state := idle
+      }
+    } 
+    is(preamble) {
       val (stateOut, counterOut, counterByteOut) =
         stateUpdate(preamble, aa, 1.U, counter, counter_byte, out_fire)
       state := stateOut
       counter := counterOut
       counter_byte := counterByteOut
     }
-    .elsewhen (state === aa) {
+    is(aa) {
       val (stateOut, counterOut, counterByteOut) =
         stateUpdate(aa, pdu_header, 4.U, counter, counter_byte, out_fire)
       state := stateOut
       counter := counterOut
       counter_byte := counterByteOut
     }
-    .elsewhen (state === pdu_header) {
+    is(pdu_header) {
       val (stateOut, counterOut, counterByteOut) = stateUpdate(
         pdu_header,
         pdu_payload,
@@ -178,7 +180,7 @@ class PacketAssembler extends Module {
       counter := counterOut
       counter_byte := counterByteOut
     }
-    .elsewhen (state === pdu_payload) {
+    is(pdu_payload) {
       val (stateOut, counterOut, counterByteOut) = stateUpdate(
         pdu_payload,
         crc,
@@ -191,17 +193,14 @@ class PacketAssembler extends Module {
       counter := counterOut
       counter_byte := counterByteOut
     }
-    .elsewhen (state === crc) {
+    is(crc) {
       val (stateOut, counterOut, counterByteOut) =
         stateUpdate(crc, idle, 3.U, counter, counter_byte, out_fire)
       state := stateOut
       counter := counterOut
       counter_byte := counterByteOut
     }
-    .otherwise {
-      state := idle //error
-    }
-
+  }
   //PDU_Length
   when (state === pdu_header && counter === 1.U) {
     pdu_length := data

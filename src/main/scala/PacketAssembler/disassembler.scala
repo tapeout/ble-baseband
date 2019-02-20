@@ -44,6 +44,42 @@ object PacketDisAssemblerIO {
 
 class PacketDisAssembler extends Module {
 
+  def stateUpdate(
+      currentState: UInt,
+      nextState: UInt,
+      length: UInt,
+      counter: UInt,
+      counterByte: UInt,
+      out_condition: Bool,
+      in_condition: Bool
+  ) = {
+    val stateOut = Wire(UInt(3.W))
+    val counterOut = Wire(UInt(8.W))
+    val counterByteOut = Wire(UInt(3.W))
+    counterOut := counter
+    counterByteOut := counterByte
+
+    when (counter === length - 1.U && out_condition) {
+      stateOut := nextState
+      counterOut := 0.U
+      counterByteOut := 0.U
+    } .otherwise {
+      stateOut := currentState
+      when(out_condition) {
+        counterOut := counter + 1.U
+      }
+      when (in_condition) {
+        when (counterByte === 7.U) {
+          counterByteOut := 0.U
+        } .otherwise {
+          counterByteOut := counterByte + 1.U
+        }
+      }
+    }
+    (stateOut, counterOut, counterByteOut)
+  }
+
+
   val io = IO(new PacketDisAssemblerIO)
 
   val idle :: preamble :: aa :: pdu_header :: pdu_payload :: crc :: wait_dma :: Nil =
@@ -56,7 +92,7 @@ class PacketDisAssembler extends Module {
   val counter_byte = RegInit(0.U(3.W)) //counter for bits in bytes
 
   //packet status
-  val length = RegInit(0.U(8.W))
+  val pdu_length = RegInit(0.U(8.W))
   val done = RegInit(false.B)
   val flag_aa = Wire(Bool())
   val flag_crc = Wire(Bool())
@@ -65,6 +101,7 @@ class PacketDisAssembler extends Module {
   val preamble0 = "b10101010".U
   val preamble1 = "b01010101".U
   val preamble01 = Mux(reg_aa(0) === 0.U, preamble0, preamble1)
+  val threshold = 7
 
   //Handshake Parameters
   val out_valid = RegInit(false.B)
@@ -103,7 +140,7 @@ class PacketDisAssembler extends Module {
     done := false.B
   }
 
-  io.out.bits.length := length
+  io.out.bits.length := pdu_length
   io.out.bits.flag_aa := flag_aa
   io.out.bits.flag_crc := flag_crc
   io.out.bits.done := done
@@ -111,13 +148,15 @@ class PacketDisAssembler extends Module {
   io.out.valid := out_valid
   io.in.ready := in_ready
 
-  when (state === idle) {
-    when (io.in.bits.switch === true.B && io.in.valid) { //note: switch usage
-      state := preamble
-    } .otherwise {
-      state := idle
+  switch(state){
+    is(idle) {
+      when (io.in.bits.switch === true.B && io.in.valid) { //note: switch usage
+        state := preamble
+      } .otherwise {
+        state := idle
+      }
     }
-  } .elsewhen (state === preamble) {
+    is(preamble) {
       when (data.asUInt === preamble01) {
         state := aa
         counter := 0.U
@@ -126,96 +165,46 @@ class PacketDisAssembler extends Module {
         state := preamble
       }
     }
-    .elsewhen (state === aa) {
-      when (counter === 3.U && out_fire === true.B) { //note
-        state := pdu_header
-        counter := 0.U
-        counter_byte := 0.U
-      } .otherwise {
-        state := aa
-        when (out_fire === true.B) {
-          counter := counter + 1.U
-        }
-        when (in_fire === true.B) {
-          when (counter_byte === 7.U) {
-            counter_byte := 0.U
-          } .otherwise {
-            counter_byte := counter_byte + 1.U
-          }
-        }
-      }
+    is(aa) {
+      val (stateOut, counterOut, counterByteOut) =
+        stateUpdate(aa, pdu_header, 4.U, counter, counter_byte, out_fire, in_fire)
+      state := stateOut
+      counter := counterOut
+      counter_byte := counterByteOut      
     }
-    .elsewhen (state === pdu_header) {
-      when (counter === 1.U && out_fire === true.B) { //note
-        state := pdu_payload
-        counter := 0.U
-        counter_byte := 0.U
-      } .otherwise {
-        state := pdu_header
-        when (out_fire === true.B) {
-          counter := counter + 1.U
-        }
-        when (in_fire === true.B) {
-          when (counter_byte === 7.U) {
-            counter_byte := 0.U
-          } .otherwise {
-            counter_byte := counter_byte + 1.U
-          }
-        }
-      }
+    is(pdu_header) {
+      val (stateOut, counterOut, counterByteOut) =
+        stateUpdate(pdu_header, pdu_payload, 2.U, counter, counter_byte, out_fire, in_fire)
+      state := stateOut
+      counter := counterOut
+      counter_byte := counterByteOut            
     }
-    .elsewhen (state === pdu_payload) {
-      when (counter === length - 1.U && out_fire === true.B) { //note
-        state := crc
-        counter := 0.U
-        counter_byte := 0.U
-      } .otherwise {
-        state := pdu_payload
-        when (out_fire === true.B) {
-          counter := counter + 1.U
-        }
-        when (in_fire === true.B) {
-          when (counter_byte === 7.U) {
-            counter_byte := 0.U
-          } .otherwise {
-            counter_byte := counter_byte + 1.U
-          }
-        }
-      }
+    is(pdu_payload) {
+      val (stateOut, counterOut, counterByteOut) =
+        stateUpdate(pdu_payload, crc, pdu_length, counter, counter_byte, out_fire, in_fire)
+      state := stateOut
+      counter := counterOut
+      counter_byte := counterByteOut      
     }
-    .elsewhen (state === crc) {
-      when (counter === 2.U && out_fire === true.B) { //note
-        state := wait_dma
-        counter := 0.U
-        counter_byte := 0.U
-      } .otherwise {
-        state := crc
-        when (out_fire === true.B) {
-          counter := counter + 1.U
-        }
-        when (in_fire === true.B) {
-          when (counter_byte === 7.U) {
-            counter_byte := 0.U
-          } .otherwise {
-            counter_byte := counter_byte + 1.U
-          }
-        }
-      }
+    is(crc) {
+      val (stateOut, counterOut, counterByteOut) =
+        stateUpdate(crc, wait_dma, 3.U, counter, counter_byte, out_fire, in_fire)
+      state := stateOut
+      counter := counterOut
+      counter_byte := counterByteOut      
     }
-    .elsewhen (state === wait_dma) {
+    is(wait_dma) {
       when (io.out.ready === true.B) {
         state := idle
       } .otherwise {
         state := wait_dma
       }
     }
-    .otherwise {
-      state := idle //error
-    }
+  }
 
   //PDU_Length
   when (state === pdu_header && counter === 1.U && out_fire === true.B) {
-    length := data.asUInt
+    pdu_length := data.asUInt
   } .otherwise {
     //do nothing: registers preserve value//note
   }

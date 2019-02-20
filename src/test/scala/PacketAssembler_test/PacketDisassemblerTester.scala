@@ -95,10 +95,10 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   sendBits(data_pduAA, data_pduAA_rec, 48)
 
   //PDU Data 1
-  sendBits(data_pduData1, data_pduData1_rec, 40)
+  sendBits(data_pduData1, data_pduData1_rec, pdu_length_1)
 
   //PDU Data 2
-  sendBits(data_pduData2, data_pduData2_rec, 32)
+  sendBits(data_pduData2, data_pduData2_rec, pdu_length_2)
 
   //CRC
   sendBits(data_crc, data_crc_rec, 24)
