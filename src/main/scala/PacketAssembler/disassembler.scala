@@ -52,7 +52,7 @@ class PacketDisAssembler extends Module {
       counterByte: UInt,
       out_condition: Bool,
       in_condition: Bool
-  ) = {
+  ): (UInt, UInt, UInt) = {
     val stateOut = Wire(UInt(3.W))
     val counterOut = Wire(UInt(8.W))
     val counterByteOut = Wire(UInt(3.W))
