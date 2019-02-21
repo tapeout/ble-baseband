@@ -28,7 +28,7 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
       expected_out: BigInt,
       length: Int
   ) = {
-    
+
     for (j <- 0 to length - 1) {
       poke(c.io.in.bits.data, data_in.U(length - 1 - j))
       poke(c.io.in.valid, true.B)
