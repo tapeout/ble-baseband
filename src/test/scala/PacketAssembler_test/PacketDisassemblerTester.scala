@@ -21,8 +21,8 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   val data_crc = BigInt("748AAD", 16)
   val data_crc_rec = BigInt("65FAC7", 16)
   val pdu_length_1 = 40
-  val pdu_length_2 = 32 
-  
+  val pdu_length_2 = 32
+
 
   def sendBits(
       data_in: BigInt,
