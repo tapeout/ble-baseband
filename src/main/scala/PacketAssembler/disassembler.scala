@@ -52,7 +52,8 @@ class PacketDisAssembler extends Module {
       counterByte: UInt,
       out_condition: Bool,
       in_condition: Bool
-  ) = {
+  ): (UInt, UInt, UInt) = {
+
     val stateOut = Wire(UInt(3.W))
     val counterOut = Wire(UInt(8.W))
     val counterByteOut = Wire(UInt(3.W))
@@ -79,6 +80,7 @@ class PacketDisAssembler extends Module {
     (stateOut, counterOut, counterByteOut)
   }
 
+
   def countOnes(
     data_in: UInt,
   ): UInt = {
@@ -93,6 +95,7 @@ class PacketDisAssembler extends Module {
     val countOnes = vecInt.reduce(_+_)
     countOnes
   }
+
 
   val io = IO(new PacketDisAssemblerIO)
 
@@ -116,7 +119,6 @@ class PacketDisAssembler extends Module {
   val preamble1 = "b01010101".U
   val preamble01 = Mux(reg_aa(0) === 0.U, preamble0, preamble1)
   val threshold = 8.U
-  
 
   //Handshake Parameters
   val out_valid = RegInit(false.B)
