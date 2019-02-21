@@ -82,23 +82,6 @@ class PacketDisAssembler extends Module {
     (stateOut, counterOut, counterByteOut)
   }
 
-
-  def countOnes(
-    data_in: UInt,
-  ): UInt = {
-    val vec = data_in.toBools
-    val vecInt = Wire(Vec(8, UInt(4.W)))
-    for (j <- 0 to 7)
-      when(vec(j) === true.B){
-        vecInt(j) := 1.U
-      }.otherwise{
-        vecInt(j) := 0.U
-      }
-    val countOnes = vecInt.reduce(_+_)
-    countOnes
-  }
-
-
   val io = IO(new PacketDisAssemblerIO)
 
   val idle :: preamble :: aa :: pdu_header :: pdu_payload :: crc :: wait_dma :: Nil =
@@ -181,7 +164,7 @@ class PacketDisAssembler extends Module {
     }
     is(preamble) {
       val cor = ~(data.asUInt ^ preamble01)
-      val ones = countOnes(cor)
+      val ones = PopCount(cor)
       when (ones >= threshold) {
         state := aa
         counter := 0.U
