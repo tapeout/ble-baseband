@@ -19,10 +19,8 @@ object PDAInputBundle {
 class PDAOutputBundle extends Bundle {
   val data = Output(UInt(8.W)) //decouple(sink): data, push, full
   val length = Output(UInt(8.W))
-  val flag_aa = Output(Bool())
-  val flag_aa_valid = Output(Bool())
-  val flag_crc = Output(Bool())
-  val flag_crc_valid = Output(Bool())
+  val flag_aa = Output(Valid(Bool()))
+  val flag_crc = Output(Valid(Bool()))
   val done = Output(Bool())
 
   override def cloneType: this.type = PDAOutputBundle().asInstanceOf[this.type]
@@ -145,10 +143,10 @@ class PacketDisAssembler extends Module {
   }
 
   io.out.bits.length := pdu_length
-  io.out.bits.flag_aa := flag_aa
-  io.out.bits.flag_aa_valid := flag_aa_valid
-  io.out.bits.flag_crc := flag_crc
-  io.out.bits.flag_crc_valid := flag_crc_valid
+  io.out.bits.flag_aa.bits := flag_aa
+  io.out.bits.flag_aa.valid := flag_aa_valid
+  io.out.bits.flag_crc.bits := flag_crc
+  io.out.bits.flag_crc.valid := flag_crc_valid
   io.out.bits.done := done
 
   io.out.valid := out_valid

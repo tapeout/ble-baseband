@@ -88,7 +88,7 @@ class PacketAssembler extends Module {
 
   val pdu_length = RegInit(0.U(8.W))
 
-  //Preamble
+  //Preamble & Pre-preamble
   val preamble0 = "b10101010".U //flipped preamble; start with least significant bit
   val preamble1 = "b01010101".U
 

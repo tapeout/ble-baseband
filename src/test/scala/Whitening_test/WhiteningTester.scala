@@ -8,7 +8,7 @@ import chisel3.iotesters.{PeekPokeTester, Driver, ChiselFlatSpec}
 
 class WhiteningTests(c: Whitening) extends PeekPokeTester(c) {
 
-  val goldenModel = new SoftwareGoldenModel()
+  //val goldenModel = new SoftwareGoldenModel()
 
   for (i <- 1 to 100) {
     val r1 = new scala.util.Random(i)
@@ -20,7 +20,7 @@ class WhiteningTests(c: Whitening) extends PeekPokeTester(c) {
     poke(c.io.init, true.B)
     poke(c.io.seed, seed_int)
 
-    var init_res = goldenModel.Whitening_sw(true, 0, seed_string)
+    var init_res = SoftwareGoldenModel.Whitening_sw(true, 0, seed_string)
     var out = init_res._1
     var s = init_res._2
 
@@ -37,7 +37,7 @@ class WhiteningTests(c: Whitening) extends PeekPokeTester(c) {
 
       poke(c.io.operand.bits, Din)
       poke(c.io.operand.valid, true.B)
-      var res = goldenModel.Whitening_sw(false, Din, s)
+      var res = SoftwareGoldenModel.Whitening_sw(false, Din, s)
       out = res._1
       s = res._2
       println(s"Hardware Output = ${peek(c.io.result.bits)}")
