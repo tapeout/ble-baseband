@@ -102,8 +102,8 @@ object SoftwareGoldenModel{
   def pa_sw(packetIn: Array[String]): (Array[String]) = {
     val len = packetIn.size
     val buf = new Array[String](len + 4)
-    val preamble = if(packetIn(0).slice(0,1) == "0") "01010101" else "10101010"
-    var crc_lfsr = "010101010101010101010101"
+    val preamble = if(packetIn(0).slice(7,8) == "0") "10101010" else "01010101"
+    var crc_lfsr = "010101010101010101010101".reverse
     var white_lfsr = "1100101"
 
     
@@ -116,17 +116,17 @@ object SoftwareGoldenModel{
         var bitIn: Int = 0
         for(j <- 0 to 7){
           if(i < len){
-            bitIn = packetIn(i).slice(j,j+1).toInt
+            bitIn = packetIn(i).slice(7-j,8-j).toInt
             crc_lfsr = Crc_sw(false, bitIn, crc_lfsr)
           }else{
-            bitIn = crc_lfsr.slice(j+i-len, j+i-len+1).toInt
+            bitIn = crc_lfsr.reverse.slice(j+(i-len)*8, j+1+(i-len)*8).toInt
           }
           var init_res = Whitening_sw(false, bitIn, white_lfsr)
           val bitOut = init_res._1
           white_lfsr = init_res._2
           stringOut = stringOut + bitOut.toString
         }
-        buf(i + 1) = stringOut
+        buf(i + 1) = stringOut.reverse
       }
     }
     return buf
@@ -136,8 +136,10 @@ object SoftwareGoldenModel{
     val output = getRandomPackets()
     //output.foreach((element:String) => printf("%s\n", element))
     val pa = pa_sw(output)
-    //println("length of the packet is "+pa.size+"")
-    //pa.foreach((element:String) => printf("%s\n", element)) 
+    val pa_int = pa.map(x => Integer.parseInt(x, 2))
+    println("length of the packet is "+pa.size+"")
+    pa.foreach((element:String) => printf("%s\n", element))
+    pa_int.foreach((element:Int) => printf("%h\n", element)) 
   }  
 
 }

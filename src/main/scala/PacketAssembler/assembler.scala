@@ -307,14 +307,13 @@ class PacketAssembler extends Module {
   when (state === pdu_header || state === pdu_payload) {
     white_data := data(counter_byte) //note
     white_valid := out_fire
-  } .elsewhen (state === crc) {
+  }.elsewhen (state === crc) {
       white_data := crc_result(counter * 8.U + counter_byte)
       white_valid := out_fire
-    }
-    .otherwise {
+  }.otherwise {
       white_data := 0.U
       white_valid := false.B
-    }
+  }
 
   //Instantiate CRC Module
   val serial_crc = Module(new Serial_CRC)

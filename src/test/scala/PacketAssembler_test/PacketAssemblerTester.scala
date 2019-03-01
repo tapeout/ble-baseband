@@ -1,29 +1,12 @@
 package PacketAssembler.test
 
 import PacketAssembler._
+import SoftwareGoldenModel._
 import chisel3._
 import chisel3.util._
 import chisel3.iotesters.{PeekPokeTester, Driver, ChiselFlatSpec}
 
 class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
-
-  val preamble_rec = BigInt("AA", 16)
-  val data_AA = BigInt("8E89BED6", 16)
-  val data_AA_rec = BigInt("6B7D9171", 16)
-  val data_pduH = BigInt("0F02", 16)
-  val data_pduH_rec = BigInt("F1BB", 16)
-  val data_pduAA = BigInt("0002723280C6", 16)
-  val data_pduAA_rec = BigInt("8984F0AB260D", 16)
-  val data_pduData1 = BigInt("0805050102", 16)
-  val data_pduData1_rec = BigInt("EE0C28B279", 16)
-  val data_pduData2 = BigInt("43303932", 16)
-  val data_pduData2_rec = BigInt("A283CBA0", 16)
-  val data_crc = BigInt("748AAD", 16)
-  val pdu_length_1 = 40
-  val pdu_length_2 = 32
-
-  //reset
-  //reset(3)
 
  def sendBits(
       data_in: BigInt,
@@ -40,14 +23,21 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
     }
     step(5)
     poke(c.io.out.ready, true.B)
-    expect(c.io.out.bits.data, expected_out.U(length - 1 - j)) //note
-    //println(s"j="+j+s"\n${peek(c.io.out.bits.data)}\t${peek(expected_out.U(length - 1 - j))}")
+    expect(c.io.out.bits.data, expected_out.U(j))
+    expect(c.io.out.valid, true.B)
+    //println(s"j="+j+s"\n${peek(c.io.out.bits.data)}\t${peek(expected_out.U(j))}")
     step(1)
-    poke(c.io.out.ready, false.B) //need to test two ready
+    poke(c.io.out.ready, false.B)
     }
     step(10)
-  } 
+  }
 
+for(i <- 0 to 100){   
+
+  val packet = SoftwareGoldenModel.getRandomPackets()
+  val sw_out = SoftwareGoldenModel.pa_sw(packet).map(x => Integer.parseInt(x,2))
+  val packetInt = packet.map(x => Integer.parseInt(x,2))
+  val len = packet.size
 
   //throughout packet
   poke(c.io.in.bits.crcSeed, "b010101010101010101010101".U)
@@ -64,50 +54,38 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
   //trigger
   poke(c.io.in.bits.trigger, true.B)
   poke(c.io.in.valid, true.B)
-  poke(c.io.in.bits.data, data_AA.U(7, 0))
+  poke(c.io.in.bits.data, packetInt(0).U(7, 0))
   step(1)
   poke(c.io.in.bits.trigger, false.B)
 
   //PREAMBLE
   for (j <- 0 to 7) {
-    //step(Random_Num(1,100))
     step(5)
     poke(c.io.out.ready, true.B)
-    expect(c.io.out.bits.data, preamble_rec.U(j)) //note: U to B
-    //println(s"${peek(c.io.out.bits.data)}")
-    //println(s"${peek(preamble_rev(j))}")
+    expect(c.io.out.bits.data, sw_out(0).U(j))
+    //println(s"j="+j+s"\n${peek(c.io.out.bits.data)}\t${peek(sw_out(0).U(j))}")
     step(1)
-    poke(c.io.out.ready, false.B) //need to test two ready
+    poke(c.io.out.ready, false.B)
   }
-  //step(Random_Num(8,100))
   step(10)
-  //AA
-  sendBits(data_AA, data_AA_rec, 32)
 
-  //PDU_HEADER
-  sendBits(data_pduH, data_pduH_rec, 16)
-
-  //PDU_AA
-  sendBits(data_pduAA, data_pduAA_rec, 48)
-
-  //PDU Data 1
-  sendBits(data_pduData1, data_pduData1_rec, pdu_length_1)
-
-  //PDU Data 2
-  sendBits(data_pduData2, data_pduData2_rec, pdu_length_2)
+  //AA and PDU
+  for(j <- 0 to len - 1){
+     sendBits(packetInt(j), sw_out(j+1), 8)
+  }
 
   //CRC
   for (j <- 0 to 23) {
-    //step(Random_Num(1,100))
     step(5)
     poke(c.io.out.ready, true.B)
-    expect(c.io.out.bits.data, data_crc.U(23 - j)) //note
-    //println(s"j="+j+s"\n${peek(c.io.out.bits.data)}\t${peek(data_crc.U(23 - j))}")
+    expect(c.io.out.bits.data, sw_out(len + 1 + j / 8).U(j % 8)) //note
+    //println(s"j="+j+s"\n${peek(c.io.out.bits.data)}\t${peek(sw_out(len + 1 + j / 8).U(j % 8))}")
     step(1)
-    poke(c.io.out.ready, false.B) //need to test two ready consequently
-  }
+    poke(c.io.out.ready, false.B)
+  } 
   
   //expect(c.io.out.bits.done, true.B)
+}
 
 }
 
