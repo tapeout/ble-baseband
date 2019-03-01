@@ -54,20 +54,11 @@ for(i <- 0 to 100){
   //trigger
   poke(c.io.in.bits.trigger, true.B)
   poke(c.io.in.valid, true.B)
-  poke(c.io.in.bits.data, packetInt(0).U(7, 0))
   step(1)
   poke(c.io.in.bits.trigger, false.B)
 
-  //PREAMBLE
-  for (j <- 0 to 7) {
-    step(5)
-    poke(c.io.out.ready, true.B)
-    expect(c.io.out.bits.data, sw_out(0).U(j))
-    //println(s"j="+j+s"\n${peek(c.io.out.bits.data)}\t${peek(sw_out(0).U(j))}")
-    step(1)
-    poke(c.io.out.ready, false.B)
-  }
-  step(10)
+  //Preamble
+  sendBits(packetInt(0), sw_out(0), 8)
 
   //AA and PDU
   for(j <- 0 to len - 1){
@@ -83,7 +74,7 @@ for(i <- 0 to 100){
     step(1)
     poke(c.io.out.ready, false.B)
   } 
-  
+
   //expect(c.io.out.bits.done, true.B)
 }
 
