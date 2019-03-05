@@ -94,9 +94,9 @@ class PacketDisAssembler extends Module {
   //packet status
   val pdu_length = RegInit(0.U(8.W))
   val done = RegInit(false.B)
-  val flag_aa = RegInit(false.B)
+  val flag_aa = RegInit(true.B)
   val flag_aa_valid = RegInit(false.B)
-  val flag_crc = RegInit(false.B)
+  val flag_crc = RegInit(true.B)
   val flag_crc_valid = RegInit(false.B)
 
   //Preamble
@@ -218,24 +218,21 @@ class PacketDisAssembler extends Module {
   //Flag_aa
   when (state === aa && counter === 0.U && out_fire === true.B) { //note: same as above
     when (data.asUInt =/= reg_aa(7, 0)) {
-      flag_aa := true.B
-      flag_aa_valid := true.B
+      flag_aa := false.B
     }
   } .elsewhen (state === aa && counter === 1.U && out_fire === true.B) {
       when (data.asUInt =/= reg_aa(15, 8)) {
-        flag_aa := true.B
-        flag_aa_valid := true.B
+        flag_aa := false.B
       }
     }
     .elsewhen (state === aa && counter === 2.U && out_fire === true.B) {
       when (data.asUInt =/= reg_aa(23, 16)) {
-        flag_aa := true.B
-        flag_aa_valid := true.B
+        flag_aa := false.B
       }
     }
     .elsewhen (state === aa && counter === 3.U && out_fire === true.B) {
       when (data.asUInt =/= reg_aa(31, 24)) {
-        flag_aa := true.B
+        flag_aa := false.B
       }
       flag_aa_valid := true.B
     }
@@ -243,18 +240,16 @@ class PacketDisAssembler extends Module {
   //Flag_crc
   when (state === crc && counter === 0.U && out_fire === true.B) { //note: same as above
     when (data.asUInt =/= crc_result(7, 0)) {
-      flag_crc := true.B
-      flag_crc_valid := true.B
+      flag_crc := false.B
     }
   } .elsewhen (state === crc && counter === 1.U && out_fire === true.B) {
       when (data.asUInt =/= crc_result(15, 8)) {
-        flag_crc := true.B
-        flag_crc_valid := true.B
+        flag_crc := false.B
       } 
     }
     .elsewhen (state === crc && counter === 2.U && out_fire === true.B) {
       when (data.asUInt =/= crc_result(23, 16)) {
-        flag_crc := true.B
+        flag_crc := false.B
       }
       flag_crc_valid := true.B
     }

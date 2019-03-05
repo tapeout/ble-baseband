@@ -8,14 +8,23 @@ import Whitening._
 class PAInputBundle extends Bundle {
   val trigger = Output(Bool())
   val data = Output(UInt(8.W))
-  val crcSeed = Output(UInt(24.W))
-  val whiteSeed = Output(UInt(7.W))
 
   override def cloneType: this.type = PAInputBundle().asInstanceOf[this.type]
 }
 
 object PAInputBundle {
   def apply(): PAInputBundle = new PAInputBundle
+}
+
+class ParameterBundle extends Bundle {
+  val crcSeed = Input(UInt(24.W))
+  val whiteSeed = Input(UInt(7.W))
+
+  override def cloneType: this.type = ParameterBundle().asInstanceOf[this.type]
+}
+
+object ParameterBundle {
+  def apply(): ParameterBundle = new ParameterBundle
 }
 
 class PAOutputBundle extends Bundle {
@@ -31,6 +40,7 @@ object PAOutputBundle {
 
 class PacketAssemblerIO extends Bundle {
   val in = Flipped(Decoupled(PAInputBundle()))
+  val param = new ParameterBundle
   val out = Decoupled(PAOutputBundle())
 
   override def cloneType: this.type =
@@ -118,8 +128,8 @@ class PacketAssembler extends Module {
   //hardcode seed initiation
   //crc_seed := "b010101010101010101010101".U
   //white_seed := "b1100101".U
-  crc_seed := io.in.bits.crcSeed
-  white_seed := io.in.bits.whiteSeed
+  crc_seed := io.param.crcSeed
+  white_seed := io.param.whiteSeed
 
   //decouple assignments
   io.in.ready := in_ready

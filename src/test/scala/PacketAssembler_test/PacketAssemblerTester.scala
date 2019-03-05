@@ -40,8 +40,8 @@ for(i <- 0 to 100){
   val len = packet.size
 
   //throughout packet
-  poke(c.io.in.bits.crcSeed, "b010101010101010101010101".U)
-  poke(c.io.in.bits.whiteSeed, "b1100101".U)
+  poke(c.io.param.crcSeed, "b010101010101010101010101".U)
+  poke(c.io.param.whiteSeed, "b1100101".U)
 
   //initialize
   poke(c.io.in.bits.trigger, false.B)

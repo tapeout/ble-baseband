@@ -1,6 +1,7 @@
 package PacketDisAssembler.test
 
 import PacketDisAssembler._
+import SoftwareGoldenModel._
 import chisel3._
 import chisel3.util._
 import chisel3.iotesters.{PeekPokeTester, Driver, ChiselFlatSpec}
@@ -30,7 +31,7 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   ) = {
 
     for (j <- 0 to length - 1) {
-      poke(c.io.in.bits.data, data_in.U(length - 1 - j))
+      poke(c.io.in.bits.data, data_in.U(j))
       poke(c.io.in.valid, true.B)
       poke(c.io.out.ready, true.B)
       if (j % 8 == 7) {
@@ -51,6 +52,10 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
     step(10)
   }
 
+  val packet = SoftwareGoldenModel.getRandomPackets()
+  val sw_out = SoftwareGoldenModel.pa_sw(packet).map(x => Integer.parseInt(x,2))
+  val packetInt = packet.map(x => Integer.parseInt(x,2))
+  val len = packet.size
   //reset
   //reset(3)
 
@@ -76,7 +81,7 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   //PREAMBLE
   for (j <- 0 to 7) {
     poke(c.io.out.ready, true.B)
-    poke(c.io.in.bits.data, data_preamble.U(7 - j)) //note: U to B
+    poke(c.io.in.bits.data, sw_out(0).U(j)) //note: U to B
     expect(c.io.out.valid, false.B)
     step(1)
     poke(c.io.out.ready, false.B)
@@ -84,31 +89,18 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
   poke(c.io.in.valid, false.B)
   step(10)
 
-  //AA
-  sendBits(data_AA, data_AA_rec, 32)
-  expect(c.io.out.bits.flag_aa.bits, false.B)
-  expect(c.io.out.bits.flag_aa.valid, true.B)
-  //PDU_HEADER
-  sendBits(data_pduH, data_pduH_rec, 16)
+  //AA and PDU
+  for(j <- 0 to len - 1){
+    sendBits(sw_out(j + 1), packetInt(j), 8)
+  }
 
-  //PDU_AA
-  sendBits(data_pduAA, data_pduAA_rec, 48)
+  // //CRC
+  // sendBits(data_crc, data_crc_rec, 24)
+  // expect(c.io.out.bits.flag_crc.bits, false.B)
+  // expect(c.io.out.bits.flag_crc.valid, true.B)
 
-  //PDU Data 1
-  sendBits(data_pduData1, data_pduData1_rec, pdu_length_1)
+  // expect(c.io.out.bits.done, true.B)
 
-  //PDU Data 2
-  sendBits(data_pduData2, data_pduData2_rec, pdu_length_2)
-
-  //CRC
-  sendBits(data_crc, data_crc_rec, 24)
-  expect(c.io.out.bits.flag_crc.bits, false.B)
-  expect(c.io.out.bits.flag_crc.valid, true.B)
-
-  expect(c.io.out.bits.done, true.B)
-  //todo: add FIFO
-  //todo: add invalid DMA
-  //todo: check output: DMA_ready
 
 }
 
