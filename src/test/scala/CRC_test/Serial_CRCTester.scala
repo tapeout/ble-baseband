@@ -11,7 +11,7 @@ import chisel3.iotesters.{PeekPokeTester, Driver, ChiselFlatSpec}
 
 class Serial_CRCTests(c: Serial_CRC) extends PeekPokeTester(c) {
 
-  val goldenModel = new SoftwareGoldenModel()
+  //val goldenModel = new SoftwareGoldenModel()
 
   for (i <- 1 to 100) {
     val r1 = new scala.util.Random(i)
@@ -27,7 +27,7 @@ class Serial_CRCTests(c: Serial_CRC) extends PeekPokeTester(c) {
     poke(c.io.init, true.B)
     poke(c.io.seed, seed_int)
 
-    var init_res = goldenModel.Crc_sw(true, 0, seed_string)
+    var init_res = SoftwareGoldenModel.Crc_sw(true, 0, seed_string)
     var out = init_res
     //var s = init_res._2
 
@@ -47,7 +47,7 @@ class Serial_CRCTests(c: Serial_CRC) extends PeekPokeTester(c) {
 
       step(1) // should wait 1 cycle to grab crc register result
 
-      var res = goldenModel.Crc_sw(false, Din, out)
+      var res = SoftwareGoldenModel.Crc_sw(false, Din, out)
       out = res
       //s = res._2
       var hardware_result = peek(c.io.result)

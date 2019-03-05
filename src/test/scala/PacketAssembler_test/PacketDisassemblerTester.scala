@@ -86,7 +86,8 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
 
   //AA
   sendBits(data_AA, data_AA_rec, 32)
-
+  expect(c.io.out.bits.flag_aa.bits, false.B)
+  expect(c.io.out.bits.flag_aa.valid, true.B)
   //PDU_HEADER
   sendBits(data_pduH, data_pduH_rec, 16)
 
@@ -101,6 +102,8 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
 
   //CRC
   sendBits(data_crc, data_crc_rec, 24)
+  expect(c.io.out.bits.flag_crc.bits, false.B)
+  expect(c.io.out.bits.flag_crc.valid, true.B)
 
   expect(c.io.out.bits.done, true.B)
   //todo: add FIFO

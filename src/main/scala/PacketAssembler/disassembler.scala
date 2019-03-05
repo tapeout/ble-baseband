@@ -19,8 +19,8 @@ object PDAInputBundle {
 class PDAOutputBundle extends Bundle {
   val data = Output(UInt(8.W)) //decouple(sink): data, push, full
   val length = Output(UInt(8.W))
-  val flag_aa = Output(Bool())
-  val flag_crc = Output(Bool())
+  val flag_aa = Output(Valid(Bool()))
+  val flag_crc = Output(Valid(Bool()))
   val done = Output(Bool())
 
   override def cloneType: this.type = PDAOutputBundle().asInstanceOf[this.type]
@@ -53,6 +53,7 @@ class PacketDisAssembler extends Module {
       out_condition: Bool,
       in_condition: Bool
   ): (UInt, UInt, UInt) = {
+
     val stateOut = Wire(UInt(3.W))
     val counterOut = Wire(UInt(8.W))
     val counterByteOut = Wire(UInt(3.W))
@@ -79,7 +80,6 @@ class PacketDisAssembler extends Module {
     (stateOut, counterOut, counterByteOut)
   }
 
-
   val io = IO(new PacketDisAssemblerIO)
 
   val idle :: preamble :: aa :: pdu_header :: pdu_payload :: crc :: wait_dma :: Nil =
@@ -94,14 +94,16 @@ class PacketDisAssembler extends Module {
   //packet status
   val pdu_length = RegInit(0.U(8.W))
   val done = RegInit(false.B)
-  val flag_aa = Wire(Bool())
-  val flag_crc = Wire(Bool())
+  val flag_aa = RegInit(false.B)
+  val flag_aa_valid = RegInit(false.B)
+  val flag_crc = RegInit(false.B)
+  val flag_crc_valid = RegInit(false.B)
 
   //Preamble
   val preamble0 = "b10101010".U
   val preamble1 = "b01010101".U
   val preamble01 = Mux(reg_aa(0) === 0.U, preamble0, preamble1)
-  val threshold = 7
+  val threshold = 8.U
 
   //Handshake Parameters
   val out_valid = RegInit(false.B)
@@ -141,8 +143,10 @@ class PacketDisAssembler extends Module {
   }
 
   io.out.bits.length := pdu_length
-  io.out.bits.flag_aa := flag_aa
-  io.out.bits.flag_crc := flag_crc
+  io.out.bits.flag_aa.bits := flag_aa
+  io.out.bits.flag_aa.valid := flag_aa_valid
+  io.out.bits.flag_crc.bits := flag_crc
+  io.out.bits.flag_crc.valid := flag_crc_valid
   io.out.bits.done := done
 
   io.out.valid := out_valid
@@ -157,7 +161,9 @@ class PacketDisAssembler extends Module {
       }
     }
     is(preamble) {
-      when (data.asUInt === preamble01) {
+      val cor = ~(data.asUInt ^ preamble01)
+      val ones = PopCount(cor)
+      when (ones >= threshold) {
         state := aa
         counter := 0.U
         counter_byte := 0.U
@@ -213,57 +219,44 @@ class PacketDisAssembler extends Module {
   when (state === aa && counter === 0.U && out_fire === true.B) { //note: same as above
     when (data.asUInt =/= reg_aa(7, 0)) {
       flag_aa := true.B
-    } .otherwise {
-      flag_aa := false.B
+      flag_aa_valid := true.B
     }
   } .elsewhen (state === aa && counter === 1.U && out_fire === true.B) {
       when (data.asUInt =/= reg_aa(15, 8)) {
         flag_aa := true.B
-      } .otherwise {
-        flag_aa := false.B
+        flag_aa_valid := true.B
       }
     }
     .elsewhen (state === aa && counter === 2.U && out_fire === true.B) {
       when (data.asUInt =/= reg_aa(23, 16)) {
         flag_aa := true.B
-      } .otherwise {
-        flag_aa := false.B
+        flag_aa_valid := true.B
       }
     }
     .elsewhen (state === aa && counter === 3.U && out_fire === true.B) {
       when (data.asUInt =/= reg_aa(31, 24)) {
         flag_aa := true.B
-      } .otherwise {
-        flag_aa := false.B
       }
-    }
-    .otherwise {
-      flag_aa := false.B
+      flag_aa_valid := true.B
     }
 
   //Flag_crc
   when (state === crc && counter === 0.U && out_fire === true.B) { //note: same as above
     when (data.asUInt =/= crc_result(7, 0)) {
       flag_crc := true.B
-    } .otherwise {
-      flag_crc := false.B
+      flag_crc_valid := true.B
     }
   } .elsewhen (state === crc && counter === 1.U && out_fire === true.B) {
       when (data.asUInt =/= crc_result(15, 8)) {
         flag_crc := true.B
-      } .otherwise {
-        flag_crc := false.B
-      }
+        flag_crc_valid := true.B
+      } 
     }
     .elsewhen (state === crc && counter === 2.U && out_fire === true.B) {
       when (data.asUInt =/= crc_result(23, 16)) {
         flag_crc := true.B
-      } .otherwise {
-        flag_crc := false.B
       }
-    }
-    .otherwise {
-      flag_crc := false.B
+      flag_crc_valid := true.B
     }
 
   //out_valid
