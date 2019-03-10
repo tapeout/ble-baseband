@@ -15,7 +15,7 @@ class WhiteningTests(c: Whitening) extends PeekPokeTester(c) {
     val seed_int = r1.nextInt(127)
     val seed_string =
       String.format("%07d", seed_int.toBinaryString.toInt.asInstanceOf[Object])
-    println("Test Number " + i + ": Seed = " + seed_string)
+    //println("Test Number " + i + ": Seed = " + seed_string)
 
     poke(c.io.init, true.B)
     poke(c.io.seed, seed_int)
@@ -33,14 +33,14 @@ class WhiteningTests(c: Whitening) extends PeekPokeTester(c) {
     for (j <- 1 to 100) {
       val r2 = new scala.util.Random(j)
       val Din = r2.nextInt(1)
-      println("Din = " + Din.toString)
+      //println("Din = " + Din.toString)
 
       poke(c.io.operand.bits, Din)
       poke(c.io.operand.valid, true.B)
       var res = SoftwareGoldenModel.Whitening_sw(false, Din, s)
       out = res._1
       s = res._2
-      println(s"Hardware Output = ${peek(c.io.result.bits)}")
+      //println(s"Hardware Output = ${peek(c.io.result.bits)}")
 
       expect(c.io.result.bits, out)
       expect(c.io.result.valid, true.B)
