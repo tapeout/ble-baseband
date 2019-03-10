@@ -236,8 +236,8 @@ class PacketDisAssembler extends Module {
   } .elsewhen (state === aa && counter === 1.U && out_fire === true.B) {
       when (data.asUInt =/= reg_aa(15, 8)) {
         flag_aa := false.B
-      }
     }
+  }
     .elsewhen (state === aa && counter === 2.U && out_fire === true.B) {
       when (data.asUInt =/= reg_aa(23, 16)) {
         flag_aa := false.B

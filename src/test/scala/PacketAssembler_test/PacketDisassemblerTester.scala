@@ -73,10 +73,12 @@ for (i <- 0 to 100){
   poke(c.io.in.valid, false.B)
   step(10)
 
+
   //AA and PDU
   for(j <- 0 to len - 1){
     sendBits(sw_out(j + 1), packetInt(j), 8)
   }
+
 
   expect(c.io.out.bits.flag_aa.bits, true.B)
   expect(c.io.out.bits.flag_aa.valid, true.B)
@@ -98,6 +100,7 @@ for (i <- 0 to 100){
   }
   poke(c.io.in.valid, false.B)
   step(10)
+
 
   expect(c.io.out.bits.flag_crc.bits, true.B)
   expect(c.io.out.bits.flag_crc.valid, true.B)
