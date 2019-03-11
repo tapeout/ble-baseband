@@ -4,11 +4,19 @@ import scala.util._
 
 object SoftwareGoldenModel{
 
-  def getRandomPackets(seed: Int) : (Array[String]) = {
+  val initSeed = new Random().nextInt()
+  printf("Inital seed is %d\n", initSeed)
+  var rand = new Random(initSeed)
+
+  def setSeed(seed: Int) = {
+    rand = new Random(seed)
+    printf("Set seed to %d\n", seed)
+  }
+
+  def getRandomPackets() : (Array[String]) = {
     // a function of generating random bluetooth packets
     // warning: this packet is only valid regarding large sections: preamble, AA, payload and CRC
     // in reality there should be subsections inside PDU that also follow certain restrictions, but these are too hard to randomize
-    val rand = new Random()
     val length = rand.nextInt(32) + 12 //length of the random packet; should be between 12 and 43 bytes
     val input = Array.tabulate(length)(_ => {
       rand.nextInt(256)
@@ -138,7 +146,7 @@ object SoftwareGoldenModel{
   }
 
   def main(args: Array[String]) = {
-    val output = getRandomPackets(0)
+    val output = getRandomPackets()
     //output.foreach((element:String) => printf("%s\n", element))
     val pa = pa_sw(output)
     val pa_int = pa.map(x => Integer.parseInt(x, 2))
