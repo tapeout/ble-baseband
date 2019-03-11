@@ -45,7 +45,7 @@ for (i <- 0 to 100){
   poke(c.io.param.crcSeed, "b010101010101010101010101".U)
   poke(c.io.param.whiteSeed, "b1100101".U)
   val aa = BigInt(packet(3) + packet(2) + packet(1) + packet(0), 2)
-  poke(c.io.param.aa, aa.U)
+  poke(c.io.param.aaDisassembler, aa.U)
 
   //initialize
   poke(c.io.in.bits.switch, false.B)

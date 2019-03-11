@@ -1,5 +1,6 @@
 package PacketDisAssembler //note
 
+import PacketAssembler._
 import chisel3._
 import chisel3.util._
 import CRC._
@@ -14,18 +15,6 @@ class PDAInputBundle extends Bundle {
 
 object PDAInputBundle {
   def apply(): PDAInputBundle = new PDAInputBundle
-}
-
-class ParameterBundle extends Bundle {
-  val crcSeed = Input(UInt(24.W))
-  val whiteSeed = Input(UInt(7.W))
-  val aa = Input(UInt(32.W))
-
-  override def cloneType: this.type = ParameterBundle().asInstanceOf[this.type]
-}
-
-object ParameterBundle {
-  def apply(): ParameterBundle = new ParameterBundle
 }
 
 class PDAOutputBundle extends Bundle {
@@ -44,7 +33,7 @@ object PDAOutputBundle {
 
 class PacketDisAssemblerIO extends Bundle {
   val in = Flipped(Decoupled(PDAInputBundle()))
-  val param = new ParameterBundle
+  val param = Input(ParameterBundle())
   val out = Decoupled(PDAOutputBundle())
 
   override def cloneType: this.type =
@@ -99,7 +88,7 @@ class PacketDisAssembler extends Module {
     Enum(7)
   val state = RegInit(idle)
 
-  val reg_aa = io.param.aa
+  val reg_aa = io.param.aaDisassembler
 
   val counter = RegInit(0.U(8.W)) //counter for bytes in packet
   val counter_byte = RegInit(0.U(3.W)) //counter for bits in bytes

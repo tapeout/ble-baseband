@@ -17,9 +17,10 @@ object PAInputBundle {
 }
 
 class ParameterBundle extends Bundle {
-  val crcSeed = Input(UInt(24.W))
-  val whiteSeed = Input(UInt(7.W))
-
+  val crcSeed = UInt(24.W)
+  val whiteSeed = UInt(7.W)
+  val aaDisassembler = UInt(32.W)
+  
   override def cloneType: this.type = ParameterBundle().asInstanceOf[this.type]
 }
 
@@ -40,7 +41,7 @@ object PAOutputBundle {
 
 class PacketAssemblerIO extends Bundle {
   val in = Flipped(Decoupled(PAInputBundle()))
-  val param = new ParameterBundle
+  val param = Input(ParameterBundle())
   val out = Decoupled(PAOutputBundle())
 
   override def cloneType: this.type =
