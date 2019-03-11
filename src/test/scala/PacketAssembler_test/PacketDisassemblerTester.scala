@@ -36,7 +36,8 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
 
 for (i <- 0 to 100){  
 
-  val packet = SoftwareGoldenModel.getRandomPackets()
+  //println("Test Number " + i)
+  val packet = SoftwareGoldenModel.getRandomPackets(i)
   val sw_out = SoftwareGoldenModel.pa_sw(packet).map(x => Integer.parseInt(x,2))
   val packetInt = packet.map(x => Integer.parseInt(x,2))
   val len = packet.size

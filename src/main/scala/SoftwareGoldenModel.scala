@@ -4,14 +4,17 @@ import scala.util._
 
 object SoftwareGoldenModel{
 
-  def getRandomPackets() : (Array[String]) = {
+  def getRandomPackets(seed: Int) : (Array[String]) = {
+    // a function of generating random bluetooth packets
+    // warning: this packet is only valid regarding large sections: preamble, AA, payload and CRC
+    // in reality there should be subsections inside PDU that also follow certain restrictions, but these are too hard to randomize
     val rand = new Random()
-    val length = rand.nextInt(32) + 12 
+    val length = rand.nextInt(32) + 12 //length of the random packet; should be between 12 and 43 bytes
     val input = Array.tabulate(length)(_ => {
       rand.nextInt(256)
-    })
-    input(5) = length - 6
-    return(input.map(x => String.format("%8s", x.toBinaryString).replace(" ", "0")))
+    }) //generate an array of random 8-bit binary numbers
+    input(5) = length - 6 //set the byte corresponding to packet length
+    return(input.map(x => String.format("%8s", x.toBinaryString).replace(" ", "0"))) //convert the binary number to 8-bit binary string
     }
 
   def Whitening_sw(reset: Boolean, bitIn: Int, lfsr: String): (Int, String) = {
@@ -100,9 +103,11 @@ object SoftwareGoldenModel{
 
 
   def pa_sw(packetIn: Array[String]): (Array[String]) = {
+    // software model for packet assembler
+    // takes in array of binary strings and outputs an array of binary strings 
     val len = packetIn.size
     val buf = new Array[String](len + 4)
-    val preamble = if(packetIn(0).slice(7,8) == "0") "10101010" else "01010101"
+    val preamble = if(packetIn(0).slice(7,8) == "0") "10101010" else "01010101" //preamble determined by first bit output of aa
     var crc_lfsr = "010101010101010101010101".reverse
     var white_lfsr = "1100101"
 
@@ -110,18 +115,18 @@ object SoftwareGoldenModel{
     buf(0) = preamble
     for(i <- 0 to len + 2){
       if(i < 4){
-        buf(i + 1) = packetIn(i)
+        buf(i + 1) = packetIn(i) // Access address; no whitening/crc, just output
       }else{
         var stringOut: String = ""
         var bitIn: Int = 0
         for(j <- 0 to 7){
           if(i < len){
             bitIn = packetIn(i).slice(7-j,8-j).toInt
-            crc_lfsr = Crc_sw(false, bitIn, crc_lfsr)
+            crc_lfsr = Crc_sw(false, bitIn, crc_lfsr) //for payload: calculate crc
           }else{
-            bitIn = crc_lfsr.reverse.slice(j+(i-len)*8, j+1+(i-len)*8).toInt
+            bitIn = crc_lfsr.reverse.slice(j+(i-len)*8, j+1+(i-len)*8).toInt 
           }
-          var init_res = Whitening_sw(false, bitIn, white_lfsr)
+          var init_res = Whitening_sw(false, bitIn, white_lfsr) //run whitening for payload & crc sections
           val bitOut = init_res._1
           white_lfsr = init_res._2
           stringOut = stringOut + bitOut.toString
@@ -133,7 +138,7 @@ object SoftwareGoldenModel{
   }
 
   def main(args: Array[String]) = {
-    val output = getRandomPackets()
+    val output = getRandomPackets(0)
     //output.foreach((element:String) => printf("%s\n", element))
     val pa = pa_sw(output)
     val pa_int = pa.map(x => Integer.parseInt(x, 2))
