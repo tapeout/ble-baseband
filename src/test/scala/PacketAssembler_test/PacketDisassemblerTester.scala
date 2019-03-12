@@ -34,81 +34,79 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
     step(10)
   }
 
-for (i <- 0 to 100){  
+  for (i <- 0 to 100) {
 
-  val packet = SoftwareGoldenModel.getRandomPackets()
-  val sw_out = SoftwareGoldenModel.pa_sw(packet).map(x => Integer.parseInt(x,2))
-  val packetInt = packet.map(x => Integer.parseInt(x,2))
-  val len = packet.size
+    val packet = SoftwareGoldenModel.getRandomPackets()
+    val sw_out =
+      SoftwareGoldenModel.pa_sw(packet).map(x => Integer.parseInt(x, 2))
+    val packetInt = packet.map(x => Integer.parseInt(x, 2))
+    val len = packet.size
 
-  //throughout packet
-  poke(c.io.param.crcSeed, "b010101010101010101010101".U)
-  poke(c.io.param.whiteSeed, "b1100101".U)
-  val aa = BigInt(packet(3) + packet(2) + packet(1) + packet(0), 2)
-  poke(c.io.param.aaDisassembler, aa.U)
+    //throughout packet
+    poke(c.io.param.crcSeed, "b010101010101010101010101".U)
+    poke(c.io.param.whiteSeed, "b1100101".U)
+    val aa = BigInt(packet(3) + packet(2) + packet(1) + packet(0), 2)
+    poke(c.io.param.aaDisassembler, aa.U)
 
-  //initialize
-  poke(c.io.in.bits.switch, false.B)
-  poke(c.io.in.valid, false.B)
-  poke(c.io.in.bits.data, 0.U)
-  poke(c.io.out.ready, false.B)
-
-  step(2)
-
-  //trigger
-  poke(c.io.in.bits.switch, true.B)
-  poke(c.io.in.bits.data, 0.U)
-  poke(c.io.in.valid, true.B)
-  step(2)
-  poke(c.io.in.bits.switch, false.B)
-
-  //PREAMBLE
-  for (j <- 0 to 7) {
-    poke(c.io.out.ready, true.B)
-    poke(c.io.in.bits.data, sw_out(0).U(j)) //note: U to B
-    expect(c.io.out.valid, false.B)
-    step(1)
+    //initialize
+    poke(c.io.in.bits.switch, false.B)
+    poke(c.io.in.valid, false.B)
+    poke(c.io.in.bits.data, 0.U)
     poke(c.io.out.ready, false.B)
-  }
-  poke(c.io.in.valid, false.B)
-  step(10)
 
+    step(2)
 
-  //AA and PDU
-  for(j <- 0 to len - 1){
-    sendBits(sw_out(j + 1), packetInt(j), 8)
-  }
-
-
-  expect(c.io.out.bits.flag_aa.bits, true.B)
-  expect(c.io.out.bits.flag_aa.valid, true.B)
-
-  // CRC
-  for (j <- 0 to 23) {
-    poke(c.io.in.bits.data, sw_out(len + 1 + j / 8).U(j % 8)) 
+    //trigger
+    poke(c.io.in.bits.switch, true.B)
+    poke(c.io.in.bits.data, 0.U)
     poke(c.io.in.valid, true.B)
-    poke(c.io.out.ready, true.B)
-    if (j % 8 == 7) {
-      step(1)
-      poke(c.io.in.valid, false.B)
-      expect(c.io.out.valid, true.B)
-    } else {
+    step(2)
+    poke(c.io.in.bits.switch, false.B)
+
+    //PREAMBLE
+    for (j <- 0 to 7) {
+      poke(c.io.out.ready, true.B)
+      poke(c.io.in.bits.data, sw_out(0).U(j)) //note: U to B
       expect(c.io.out.valid, false.B)
+      step(1)
+      poke(c.io.out.ready, false.B)
     }
-    step(1)
-    poke(c.io.out.ready, false.B)
+    poke(c.io.in.valid, false.B)
+    step(10)
+
+    //AA and PDU
+    for (j <- 0 to len - 1) {
+      sendBits(sw_out(j + 1), packetInt(j), 8)
+    }
+
+    expect(c.io.out.bits.flag_aa.bits, true.B)
+    expect(c.io.out.bits.flag_aa.valid, true.B)
+
+    // CRC
+    for (j <- 0 to 23) {
+      poke(c.io.in.bits.data, sw_out(len + 1 + j / 8).U(j % 8))
+      poke(c.io.in.valid, true.B)
+      poke(c.io.out.ready, true.B)
+      if (j % 8 == 7) {
+        step(1)
+        poke(c.io.in.valid, false.B)
+        expect(c.io.out.valid, true.B)
+      } else {
+        expect(c.io.out.valid, false.B)
+      }
+      step(1)
+      poke(c.io.out.ready, false.B)
+    }
+    poke(c.io.in.valid, false.B)
+    step(10)
+
+    expect(c.io.out.bits.flag_crc.bits, true.B)
+    expect(c.io.out.bits.flag_crc.valid, true.B)
+    expect(c.io.out.bits.done, true.B)
+
+    poke(c.io.out.ready, true.B)
+    step(10)
   }
-  poke(c.io.in.valid, false.B)
-  step(10)
-
-
-  expect(c.io.out.bits.flag_crc.bits, true.B)
-  expect(c.io.out.bits.flag_crc.valid, true.B)
-  expect(c.io.out.bits.done, true.B)
-
-  poke(c.io.out.ready, true.B)
-  step(10)
-}
 }
 
 class PacketDisAssemblerTester extends ChiselFlatSpec {

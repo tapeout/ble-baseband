@@ -58,18 +58,19 @@ object PacketDisAssemblerIO {
 }
 
 class PacketDisAssembler extends Module {
-/**
-  * stateUpdate
-  * function that updates the finite state machine inside packet disassembler
-  * @param currentState current state of FSM
-  * @param nextState supposed next state of FSM
-  * @param length the value that counter needs to reach in order to move to next state; related to the length of packet subsections
-  * @param counter counter of bytes
-  * @param counterByte counter of bits within a byte
-  * @param out_condition output condition needed for state transition; usually output fire
-  * @param in_condition input condition needed for state transition; usually input fire
-  * @return the function returns a tuple (stateOut, counterOut, counterByteOut): the resulting state, counter and counterByte according to input
-  */
+
+  /**
+    * stateUpdate
+    * function that updates the finite state machine inside packet disassembler
+    * @param currentState current state of FSM
+    * @param nextState supposed next state of FSM
+    * @param length the value that counter needs to reach in order to move to next state; related to the length of packet subsections
+    * @param counter counter of bytes
+    * @param counterByte counter of bits within a byte
+    * @param out_condition output condition needed for state transition; usually output fire
+    * @param in_condition input condition needed for state transition; usually input fire
+    * @return the function returns a tuple (stateOut, counterOut, counterByteOut): the resulting state, counter and counterByte according to input
+    */
   def stateUpdate(
       currentState: UInt,
       nextState: UInt,
@@ -92,7 +93,7 @@ class PacketDisAssembler extends Module {
       counterByteOut := 0.U
     } .otherwise {
       stateOut := currentState
-      when(out_condition) {
+      when (out_condition) {
         counterOut := counter + 1.U
       }
       when (in_condition) {
@@ -178,7 +179,7 @@ class PacketDisAssembler extends Module {
   io.out.valid := out_valid
   io.in.ready := in_ready
 
-  switch(state){
+  switch(state) {
     is(idle) {
       when (io.in.bits.switch === true.B && io.in.valid) { //note: switch usage
         state := preamble
@@ -199,31 +200,63 @@ class PacketDisAssembler extends Module {
     }
     is(aa) {
       val (stateOut, counterOut, counterByteOut) =
-        stateUpdate(aa, pdu_header, 4.U, counter, counter_byte, out_fire, in_fire)
+        stateUpdate(
+          aa,
+          pdu_header,
+          4.U,
+          counter,
+          counter_byte,
+          out_fire,
+          in_fire
+        )
       state := stateOut
       counter := counterOut
-      counter_byte := counterByteOut      
+      counter_byte := counterByteOut
     }
     is(pdu_header) {
       val (stateOut, counterOut, counterByteOut) =
-        stateUpdate(pdu_header, pdu_payload, 2.U, counter, counter_byte, out_fire, in_fire)
+        stateUpdate(
+          pdu_header,
+          pdu_payload,
+          2.U,
+          counter,
+          counter_byte,
+          out_fire,
+          in_fire
+        )
       state := stateOut
       counter := counterOut
-      counter_byte := counterByteOut            
+      counter_byte := counterByteOut
     }
     is(pdu_payload) {
       val (stateOut, counterOut, counterByteOut) =
-        stateUpdate(pdu_payload, crc, pdu_length, counter, counter_byte, out_fire, in_fire)
+        stateUpdate(
+          pdu_payload,
+          crc,
+          pdu_length,
+          counter,
+          counter_byte,
+          out_fire,
+          in_fire
+        )
       state := stateOut
       counter := counterOut
-      counter_byte := counterByteOut      
+      counter_byte := counterByteOut
     }
     is(crc) {
       val (stateOut, counterOut, counterByteOut) =
-        stateUpdate(crc, wait_dma, 3.U, counter, counter_byte, out_fire, in_fire)
+        stateUpdate(
+          crc,
+          wait_dma,
+          3.U,
+          counter,
+          counter_byte,
+          out_fire,
+          in_fire
+        )
       state := stateOut
       counter := counterOut
-      counter_byte := counterByteOut      
+      counter_byte := counterByteOut
     }
     is(wait_dma) {
       when (io.out.ready === true.B) {
@@ -249,8 +282,8 @@ class PacketDisAssembler extends Module {
   } .elsewhen (state === aa && counter === 1.U && out_fire === true.B) {
       when (data.asUInt =/= reg_aa(15, 8)) {
         flag_aa := false.B
+      }
     }
-  }
     .elsewhen (state === aa && counter === 2.U && out_fire === true.B) {
       when (data.asUInt =/= reg_aa(23, 16)) {
         flag_aa := false.B
@@ -266,7 +299,6 @@ class PacketDisAssembler extends Module {
       flag_aa_valid := false.B
     }
 
-
   //Flag_crc
   when (state === crc && counter === 0.U && out_fire === true.B) { //note: same as above
     when (data.asUInt =/= crc_result(7, 0)) {
@@ -275,7 +307,7 @@ class PacketDisAssembler extends Module {
   } .elsewhen (state === crc && counter === 1.U && out_fire === true.B) {
       when (data.asUInt =/= crc_result(15, 8)) {
         flag_crc := false.B
-      } 
+      }
     }
     .elsewhen (state === crc && counter === 2.U && out_fire === true.B) {
       when (data.asUInt =/= crc_result(23, 16)) {
@@ -346,7 +378,7 @@ class PacketDisAssembler extends Module {
       }
     }
     .otherwise { //idle
-      for(i <- 0 to 7) {
+      for (i <- 0 to 7) {
         data(i) := false.B
       }
     }
