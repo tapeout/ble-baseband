@@ -27,7 +27,6 @@ object SoftwareGoldenModel{
   * The sixth byte of the packet should be the length of the packet, corresponding to the BLE spec
   * @return The function returns an array of 8-bit bit string 
   */
-
   def getRandomPackets() : (Array[String]) = {
     val length = rand.nextInt(32) + 12 
     val input = Array.tabulate(length)(_ => {
@@ -44,8 +43,7 @@ object SoftwareGoldenModel{
   * @param bitIn one bit input 
   * @param lfsr the 7-bit value of lfsr register in bit string format
   * @return the function returns the one bit output and the updated value of lfsr after input
-  */  
-
+  */
   def Whitening_sw(reset: Boolean, bitIn: Int, lfsr: String): (Int, String) = {
     val len = 7
     val buf = Array.ofDim[Int](len)
@@ -82,8 +80,7 @@ object SoftwareGoldenModel{
   * @param bitIn one bit input 
   * @param lfsr the 24-bit value of lfsr register in bit string format
   * @return the function returns the updated value of lfsr after input
-  */ 
-
+  */
   def Crc_sw(reset: Boolean, bitIn: Int, lfsr: String): (String) = {
     val len = 24
     val buf = Array.ofDim[Int](len)
@@ -148,7 +145,6 @@ object SoftwareGoldenModel{
   * @param packetIn An array of 8-bit strings
   * @return output packet processed by packet assembler
   */
-
   def pa_sw(packetIn: Array[String]): (Array[String]) = {
 
     val len = packetIn.size

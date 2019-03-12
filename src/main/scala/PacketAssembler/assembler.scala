@@ -10,7 +10,6 @@ import Whitening._
   * @param trigger indicates the start of a new packet
   * @param data 8-bit input of data
   */
-
 class PAInputBundle extends Bundle {
   val trigger = Output(Bool())
   val data = Output(UInt(8.W))
@@ -28,7 +27,6 @@ object PAInputBundle {
   * @param whiteSeed initial lfsr value for whitening
   * @param aaDisassembler reference access address; used by packet disassembler only
   */
-
 class ParameterBundle extends Bundle {
   val crcSeed = UInt(24.W)
   val whiteSeed = UInt(7.W)
@@ -46,7 +44,6 @@ object ParameterBundle {
   * @param data 1-bit output data
   * @param done boolean value that indicates the end of current packet
   */
-
 class PAOutputBundle extends Bundle {
   val data = Output(UInt(1.W))
   val done = Output(Bool())
@@ -72,7 +69,6 @@ object PacketAssemblerIO {
 }
 
 class PacketAssembler extends Module {
-
 /**
   * stateUpdate
   * function that updates the finite state machine inside packet assembler
@@ -82,11 +78,8 @@ class PacketAssembler extends Module {
   * @param counter counter of bytes
   * @param counterByte counter of bits within a byte
   * @param condition additional condition needed for state transition; usually output fire
-  * @return stateOut the resulting state according to input
-  * @return counterOut resulting counter value
-  * @return counterByteOut resulting counterByte value
+  * @return the function returns a tuple (stateOut, counterOut, counterByteOut): the resulting state, counter and counterByte according to input
   */
-
   def stateUpdate(
       currentState: UInt,
       nextState: UInt,

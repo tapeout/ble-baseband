@@ -11,7 +11,6 @@ import Whitening._
   * @param switch indicates the start of a new packet
   * @param data 1-bit input of data
   */
-
 class PDAInputBundle extends Bundle {
   val switch = Output(Bool())
   val data = Output(UInt(1.W)) //decouple(source): data, pop, empty
@@ -31,7 +30,6 @@ object PDAInputBundle {
   * @param flag_crc checks if the crc matches; false if not match, also contains a valid interface
   * @param done boolean value that indicates the end of current packet
   */
-
 class PDAOutputBundle extends Bundle {
   val data = Output(UInt(8.W)) //decouple(sink): data, push, full
   val length = Output(UInt(8.W))
@@ -60,7 +58,6 @@ object PacketDisAssemblerIO {
 }
 
 class PacketDisAssembler extends Module {
-
 /**
   * stateUpdate
   * function that updates the finite state machine inside packet disassembler
@@ -71,11 +68,8 @@ class PacketDisAssembler extends Module {
   * @param counterByte counter of bits within a byte
   * @param out_condition output condition needed for state transition; usually output fire
   * @param in_condition input condition needed for state transition; usually input fire
-  * @return stateOut the resulting state according to input
-  * @return counterOut resulting counter value
-  * @return counterByteOut resulting counterByte value
+  * @return the function returns a tuple (stateOut, counterOut, counterByteOut): the resulting state, counter and counterByte according to input
   */
-
   def stateUpdate(
       currentState: UInt,
       nextState: UInt,
