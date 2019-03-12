@@ -262,6 +262,10 @@ class PacketDisAssembler extends Module {
       }
       flag_aa_valid := true.B
     }
+    .elsewhen (state === idle) {
+      flag_aa_valid := false.B
+    }
+
 
   //Flag_crc
   when (state === crc && counter === 0.U && out_fire === true.B) { //note: same as above
@@ -278,6 +282,9 @@ class PacketDisAssembler extends Module {
         flag_crc := false.B
       }
       flag_crc_valid := true.B
+    }
+    .elsewhen (state === idle) {
+      flag_crc_valid := false.B
     }
 
   //out_valid
