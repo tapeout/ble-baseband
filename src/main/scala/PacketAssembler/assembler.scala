@@ -5,11 +5,14 @@ import chisel3.util._
 import CRC._
 import Whitening._
 
+/**
+  * PAInputBundle: input of packet assembler
+  * @param trigger indicates the start of a new packet
+  * @param data 8-bit input of data
+  */
 class PAInputBundle extends Bundle {
   val trigger = Output(Bool())
   val data = Output(UInt(8.W))
-  val crcSeed = Output(UInt(24.W))
-  val whiteSeed = Output(UInt(7.W))
 
   override def cloneType: this.type = PAInputBundle().asInstanceOf[this.type]
 }
@@ -18,6 +21,29 @@ object PAInputBundle {
   def apply(): PAInputBundle = new PAInputBundle
 }
 
+/**
+  * ParameterBundle: parameters needed in packet assembler/disassembler
+  * @param crcSeed initial lfsr value for crc
+  * @param whiteSeed initial lfsr value for whitening
+  * @param aaDisassembler reference access address; used by packet disassembler only
+  */
+class ParameterBundle extends Bundle {
+  val crcSeed = UInt(24.W)
+  val whiteSeed = UInt(7.W)
+  val aaDisassembler = UInt(32.W)
+
+  override def cloneType: this.type = ParameterBundle().asInstanceOf[this.type]
+}
+
+object ParameterBundle {
+  def apply(): ParameterBundle = new ParameterBundle
+}
+
+/**
+  * PAOutputBundle: output of packet assembler
+  * @param data 1-bit output data
+  * @param done boolean value that indicates the end of current packet
+  */
 class PAOutputBundle extends Bundle {
   val data = Output(UInt(1.W))
   val done = Output(Bool())
@@ -31,6 +57,7 @@ object PAOutputBundle {
 
 class PacketAssemblerIO extends Bundle {
   val in = Flipped(Decoupled(PAInputBundle()))
+  val param = Input(ParameterBundle())
   val out = Decoupled(PAOutputBundle())
 
   override def cloneType: this.type =
@@ -43,6 +70,17 @@ object PacketAssemblerIO {
 
 class PacketAssembler extends Module {
 
+  /**
+    * stateUpdate
+    * function that updates the finite state machine inside packet assembler
+    * @param currentState current state of FSM
+    * @param nextState supposed next state of FSM
+    * @param length the value that counter needs to reach in order to move to next state; related to the length of packet subsections
+    * @param counter counter of bytes
+    * @param counterByte counter of bits within a byte
+    * @param condition additional condition needed for state transition; usually output fire
+    * @return the function returns a tuple (stateOut, counterOut, counterByteOut): the resulting state, counter and counterByte according to input
+    */
   def stateUpdate(
       currentState: UInt,
       nextState: UInt,
@@ -118,8 +156,8 @@ class PacketAssembler extends Module {
   //hardcode seed initiation
   //crc_seed := "b010101010101010101010101".U
   //white_seed := "b1100101".U
-  crc_seed := io.in.bits.crcSeed
-  white_seed := io.in.bits.whiteSeed
+  crc_seed := io.param.crcSeed
+  white_seed := io.param.whiteSeed
 
   //decouple assignments
   io.in.ready := in_ready
@@ -143,16 +181,16 @@ class PacketAssembler extends Module {
   }
 
   //State Transition with counter updates
-  switch(state) { 
+  switch(state) {
     is(idle) {
       when (io.in.bits.trigger === true.B && io.in.valid) {
         state := preamble
         counter := 0.U
         counter_byte := 0.U
-      }.otherwise {
+      } .otherwise {
         state := idle
       }
-    } 
+    }
     is(preamble) {
       val (stateOut, counterOut, counterByteOut) =
         stateUpdate(preamble, aa, 1.U, counter, counter_byte, out_fire)
@@ -307,13 +345,14 @@ class PacketAssembler extends Module {
   when (state === pdu_header || state === pdu_payload) {
     white_data := data(counter_byte) //note
     white_valid := out_fire
-  }.elsewhen (state === crc) {
+  } .elsewhen (state === crc) {
       white_data := crc_result(counter * 8.U + counter_byte)
       white_valid := out_fire
-  }.otherwise {
+    }
+    .otherwise {
       white_data := 0.U
       white_valid := false.B
-  }
+    }
 
   //Instantiate CRC Module
   val serial_crc = Module(new Serial_CRC)

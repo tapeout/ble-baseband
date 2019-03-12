@@ -22,7 +22,7 @@ class Serial_CRCTests(c: Serial_CRC) extends PeekPokeTester(c) {
       .replace(" ", "0") //.toInt.asInstanceOf[Object])
     //val seed_string = seed_int.toBinaryString
     //reverse(seed_string)
-    println("Test Number " + i + ": Seed = " + seed_string)
+    //println("Test Number " + i + ": Seed = " + seed_string)
 
     poke(c.io.init, true.B)
     poke(c.io.seed, seed_int)
@@ -40,7 +40,7 @@ class Serial_CRCTests(c: Serial_CRC) extends PeekPokeTester(c) {
     for (j <- 1 to 100) {
       val r2 = new scala.util.Random(j)
       val Din = r2.nextInt(1)
-      println("Din = " + Din.toString)
+      //println("Din = " + Din.toString)
 
       poke(c.io.operand.bits, Din)
       poke(c.io.operand.valid, true.B)
@@ -51,7 +51,7 @@ class Serial_CRCTests(c: Serial_CRC) extends PeekPokeTester(c) {
       out = res
       //s = res._2
       var hardware_result = peek(c.io.result)
-      println(s"Hardware Output = ${hardware_result.toString.toInt}")
+      //println(s"Hardware Output = ${hardware_result.toString.toInt}")
 
       var buf = Array.ofDim[Int](24)
       for (i <- 0 to 23)

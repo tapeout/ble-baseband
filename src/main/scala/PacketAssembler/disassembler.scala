@@ -1,10 +1,16 @@
 package PacketDisAssembler //note
 
+import PacketAssembler._
 import chisel3._
 import chisel3.util._
 import CRC._
 import Whitening._
 
+/**
+  * PDAInputBundle: input of packet disassembler
+  * @param switch indicates the start of a new packet
+  * @param data 1-bit input of data
+  */
 class PDAInputBundle extends Bundle {
   val switch = Output(Bool())
   val data = Output(UInt(1.W)) //decouple(source): data, pop, empty
@@ -16,6 +22,14 @@ object PDAInputBundle {
   def apply(): PDAInputBundle = new PDAInputBundle
 }
 
+/**
+  * PDAOutputBundle: output of packet disassembler
+  * @param data 8-bit output data
+  * @param length length of the packet
+  * @param flag_aa checks if the access address of the packet matches the reference; false if not match, also contains a valid interface
+  * @param flag_crc checks if the crc matches; false if not match, also contains a valid interface
+  * @param done boolean value that indicates the end of current packet
+  */
 class PDAOutputBundle extends Bundle {
   val data = Output(UInt(8.W)) //decouple(sink): data, push, full
   val length = Output(UInt(8.W))
@@ -32,6 +46,7 @@ object PDAOutputBundle {
 
 class PacketDisAssemblerIO extends Bundle {
   val in = Flipped(Decoupled(PDAInputBundle()))
+  val param = Input(ParameterBundle())
   val out = Decoupled(PDAOutputBundle())
 
   override def cloneType: this.type =
@@ -44,6 +59,18 @@ object PacketDisAssemblerIO {
 
 class PacketDisAssembler extends Module {
 
+  /**
+    * stateUpdate
+    * function that updates the finite state machine inside packet disassembler
+    * @param currentState current state of FSM
+    * @param nextState supposed next state of FSM
+    * @param length the value that counter needs to reach in order to move to next state; related to the length of packet subsections
+    * @param counter counter of bytes
+    * @param counterByte counter of bits within a byte
+    * @param out_condition output condition needed for state transition; usually output fire
+    * @param in_condition input condition needed for state transition; usually input fire
+    * @return the function returns a tuple (stateOut, counterOut, counterByteOut): the resulting state, counter and counterByte according to input
+    */
   def stateUpdate(
       currentState: UInt,
       nextState: UInt,
@@ -66,7 +93,7 @@ class PacketDisAssembler extends Module {
       counterByteOut := 0.U
     } .otherwise {
       stateOut := currentState
-      when(out_condition) {
+      when (out_condition) {
         counterOut := counter + 1.U
       }
       when (in_condition) {
@@ -86,7 +113,7 @@ class PacketDisAssembler extends Module {
     Enum(7)
   val state = RegInit(idle)
 
-  val reg_aa = "b10001110100010011011111011010110".U
+  val reg_aa = io.param.aaDisassembler
 
   val counter = RegInit(0.U(8.W)) //counter for bytes in packet
   val counter_byte = RegInit(0.U(3.W)) //counter for bits in bytes
@@ -94,9 +121,9 @@ class PacketDisAssembler extends Module {
   //packet status
   val pdu_length = RegInit(0.U(8.W))
   val done = RegInit(false.B)
-  val flag_aa = RegInit(false.B)
+  val flag_aa = RegInit(true.B)
   val flag_aa_valid = RegInit(false.B)
-  val flag_crc = RegInit(false.B)
+  val flag_crc = RegInit(true.B)
   val flag_crc_valid = RegInit(false.B)
 
   //Preamble
@@ -120,14 +147,14 @@ class PacketDisAssembler extends Module {
   val crc_data = Wire(UInt(1.W))
   val crc_valid = Wire(Bool())
   val crc_result = Wire(UInt(24.W))
-  val crc_seed = "b010101010101010101010101".U
+  val crc_seed = io.param.crcSeed
 
   //whitening
   val dewhite_reset = (state === idle)
   val dewhite_data = Wire(UInt(1.W))
   val dewhite_valid = Wire(Bool())
   val dewhite_result = Wire(UInt(1.W))
-  val dewhite_seed = "b1100101".U
+  val dewhite_seed = io.param.whiteSeed
 
   //output function
   when (state === idle || state === preamble) {
@@ -152,7 +179,7 @@ class PacketDisAssembler extends Module {
   io.out.valid := out_valid
   io.in.ready := in_ready
 
-  switch(state){
+  switch(state) {
     is(idle) {
       when (io.in.bits.switch === true.B && io.in.valid) { //note: switch usage
         state := preamble
@@ -173,31 +200,63 @@ class PacketDisAssembler extends Module {
     }
     is(aa) {
       val (stateOut, counterOut, counterByteOut) =
-        stateUpdate(aa, pdu_header, 4.U, counter, counter_byte, out_fire, in_fire)
+        stateUpdate(
+          aa,
+          pdu_header,
+          4.U,
+          counter,
+          counter_byte,
+          out_fire,
+          in_fire
+        )
       state := stateOut
       counter := counterOut
-      counter_byte := counterByteOut      
+      counter_byte := counterByteOut
     }
     is(pdu_header) {
       val (stateOut, counterOut, counterByteOut) =
-        stateUpdate(pdu_header, pdu_payload, 2.U, counter, counter_byte, out_fire, in_fire)
+        stateUpdate(
+          pdu_header,
+          pdu_payload,
+          2.U,
+          counter,
+          counter_byte,
+          out_fire,
+          in_fire
+        )
       state := stateOut
       counter := counterOut
-      counter_byte := counterByteOut            
+      counter_byte := counterByteOut
     }
     is(pdu_payload) {
       val (stateOut, counterOut, counterByteOut) =
-        stateUpdate(pdu_payload, crc, pdu_length, counter, counter_byte, out_fire, in_fire)
+        stateUpdate(
+          pdu_payload,
+          crc,
+          pdu_length,
+          counter,
+          counter_byte,
+          out_fire,
+          in_fire
+        )
       state := stateOut
       counter := counterOut
-      counter_byte := counterByteOut      
+      counter_byte := counterByteOut
     }
     is(crc) {
       val (stateOut, counterOut, counterByteOut) =
-        stateUpdate(crc, wait_dma, 3.U, counter, counter_byte, out_fire, in_fire)
+        stateUpdate(
+          crc,
+          wait_dma,
+          3.U,
+          counter,
+          counter_byte,
+          out_fire,
+          in_fire
+        )
       state := stateOut
       counter := counterOut
-      counter_byte := counterByteOut      
+      counter_byte := counterByteOut
     }
     is(wait_dma) {
       when (io.out.ready === true.B) {
@@ -218,45 +277,46 @@ class PacketDisAssembler extends Module {
   //Flag_aa
   when (state === aa && counter === 0.U && out_fire === true.B) { //note: same as above
     when (data.asUInt =/= reg_aa(7, 0)) {
-      flag_aa := true.B
-      flag_aa_valid := true.B
+      flag_aa := false.B
     }
   } .elsewhen (state === aa && counter === 1.U && out_fire === true.B) {
       when (data.asUInt =/= reg_aa(15, 8)) {
-        flag_aa := true.B
-        flag_aa_valid := true.B
+        flag_aa := false.B
       }
     }
     .elsewhen (state === aa && counter === 2.U && out_fire === true.B) {
       when (data.asUInt =/= reg_aa(23, 16)) {
-        flag_aa := true.B
-        flag_aa_valid := true.B
+        flag_aa := false.B
       }
     }
     .elsewhen (state === aa && counter === 3.U && out_fire === true.B) {
       when (data.asUInt =/= reg_aa(31, 24)) {
-        flag_aa := true.B
+        flag_aa := false.B
       }
       flag_aa_valid := true.B
+    }
+    .elsewhen (state === idle) {
+      flag_aa_valid := false.B
     }
 
   //Flag_crc
   when (state === crc && counter === 0.U && out_fire === true.B) { //note: same as above
     when (data.asUInt =/= crc_result(7, 0)) {
-      flag_crc := true.B
-      flag_crc_valid := true.B
+      flag_crc := false.B
     }
   } .elsewhen (state === crc && counter === 1.U && out_fire === true.B) {
       when (data.asUInt =/= crc_result(15, 8)) {
-        flag_crc := true.B
-        flag_crc_valid := true.B
-      } 
+        flag_crc := false.B
+      }
     }
     .elsewhen (state === crc && counter === 2.U && out_fire === true.B) {
       when (data.asUInt =/= crc_result(23, 16)) {
-        flag_crc := true.B
+        flag_crc := false.B
       }
       flag_crc_valid := true.B
+    }
+    .elsewhen (state === idle) {
+      flag_crc_valid := false.B
     }
 
   //out_valid
@@ -318,7 +378,9 @@ class PacketDisAssembler extends Module {
       }
     }
     .otherwise { //idle
-      //do nothing or := 0.U
+      for (i <- 0 to 7) {
+        data(i) := false.B
+      }
     }
 
   //crc
