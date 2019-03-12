@@ -6,6 +6,12 @@ import chisel3.util._
 import CRC._
 import Whitening._
 
+/**
+  * PDAInputBundle: input of packet disassembler
+  * @param switch indicates the start of a new packet
+  * @param data 1-bit input of data
+  */
+
 class PDAInputBundle extends Bundle {
   val switch = Output(Bool())
   val data = Output(UInt(1.W)) //decouple(source): data, pop, empty
@@ -16,6 +22,15 @@ class PDAInputBundle extends Bundle {
 object PDAInputBundle {
   def apply(): PDAInputBundle = new PDAInputBundle
 }
+
+/**
+  * PDAOutputBundle: output of packet disassembler
+  * @param data 8-bit output data
+  * @param length length of the packet
+  * @param flag_aa checks if the access address of the packet matches the reference; false if not match, also contains a valid interface
+  * @param flag_crc checks if the crc matches; false if not match, also contains a valid interface
+  * @param done boolean value that indicates the end of current packet
+  */
 
 class PDAOutputBundle extends Bundle {
   val data = Output(UInt(8.W)) //decouple(sink): data, push, full
@@ -45,6 +60,21 @@ object PacketDisAssemblerIO {
 }
 
 class PacketDisAssembler extends Module {
+
+/**
+  * stateUpdate
+  * function that updates the finite state machine inside packet disassembler
+  * @param currentState current state of FSM
+  * @param nextState supposed next state of FSM
+  * @param length the value that counter needs to reach in order to move to next state; related to the length of packet subsections
+  * @param counter counter of bytes
+  * @param counterByte counter of bits within a byte
+  * @param out_condition output condition needed for state transition; usually output fire
+  * @param in_condition input condition needed for state transition; usually input fire
+  * @return stateOut the resulting state according to input
+  * @return counterOut resulting counter value
+  * @return counterByteOut resulting counterByte value
+  */
 
   def stateUpdate(
       currentState: UInt,

@@ -5,6 +5,12 @@ import chisel3.util._
 import CRC._
 import Whitening._
 
+/**
+  * PAInputBundle: input of packet assembler
+  * @param trigger indicates the start of a new packet
+  * @param data 8-bit input of data
+  */
+
 class PAInputBundle extends Bundle {
   val trigger = Output(Bool())
   val data = Output(UInt(8.W))
@@ -15,6 +21,13 @@ class PAInputBundle extends Bundle {
 object PAInputBundle {
   def apply(): PAInputBundle = new PAInputBundle
 }
+
+/**
+  * ParameterBundle: parameters needed in packet assembler/disassembler
+  * @param crcSeed initial lfsr value for crc
+  * @param whiteSeed initial lfsr value for whitening
+  * @param aaDisassembler reference access address; used by packet disassembler only
+  */
 
 class ParameterBundle extends Bundle {
   val crcSeed = UInt(24.W)
@@ -27,6 +40,12 @@ class ParameterBundle extends Bundle {
 object ParameterBundle {
   def apply(): ParameterBundle = new ParameterBundle
 }
+
+/**
+  * PAOutputBundle: output of packet assembler
+  * @param data 1-bit output data
+  * @param done boolean value that indicates the end of current packet
+  */
 
 class PAOutputBundle extends Bundle {
   val data = Output(UInt(1.W))
@@ -53,6 +72,20 @@ object PacketAssemblerIO {
 }
 
 class PacketAssembler extends Module {
+
+/**
+  * stateUpdate
+  * function that updates the finite state machine inside packet assembler
+  * @param currentState current state of FSM
+  * @param nextState supposed next state of FSM
+  * @param length the value that counter needs to reach in order to move to next state; related to the length of packet subsections
+  * @param counter counter of bytes
+  * @param counterByte counter of bits within a byte
+  * @param condition additional condition needed for state transition; usually output fire
+  * @return stateOut the resulting state according to input
+  * @return counterOut resulting counter value
+  * @return counterByteOut resulting counterByte value
+  */
 
   def stateUpdate(
       currentState: UInt,
