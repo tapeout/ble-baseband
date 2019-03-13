@@ -11,7 +11,7 @@ jobs:
       TERM: dumb
     steps:
       - checkout
-      - run: apt-get update && apt-get install -y verilator
+      - run: sudo apt-get update && sudo apt-get install -y verilator
       - run: sbt test
 
 general:
