@@ -165,7 +165,7 @@ class PacketAssembler extends Module {
 
   //output bits
   when (state === idle) {
-    io.out.bits.data := 0
+    io.out.bits.data := 12.U
   } .otherwise {
     when (state === pdu_header || state === pdu_payload || state === crc) {
       io.out.bits.data := white_result
