@@ -137,7 +137,7 @@ class PacketDisAssembler extends Module {
   val out_valid = RegInit(false.B)
   val out_fire = io.out.data.ready & io.out.data.valid
   val in_ready = RegInit(Bool(), false.B)
-  val in_fire = io.in.ready & io.in.valid
+  val in_fire = io.in.ready && io.in.valid
 
   //data registers
 
