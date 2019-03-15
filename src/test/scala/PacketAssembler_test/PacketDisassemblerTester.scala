@@ -17,18 +17,18 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
     for (j <- 0 to length - 1) {
       poke(c.io.in.bits.data, data_in.U(j))
       poke(c.io.in.valid, true.B)
-      poke(c.io.out.ready, true.B)
+      poke(c.io.out.data.ready, true.B)
       if (j % 8 == 7) {
         step(1)
         poke(c.io.in.valid, false.B)
-        expect(c.io.out.bits.data, expected_out.U(j, j - 7))
-        expect(c.io.out.valid, true.B)
+        expect(c.io.out.data.bits, expected_out.U(j, j - 7))
+        expect(c.io.out.data.valid, true.B)
         //println(s"j=" + j + s"\n${peek(c.io.out.bits.data)}\t${peek(expected_out.U(j, j - 7))}")
       } else {
-        expect(c.io.out.valid, false.B)
+        expect(c.io.out.data.valid, false.B)
       }
       step(1)
-      poke(c.io.out.ready, false.B)
+      poke(c.io.out.data.ready, false.B)
     }
     poke(c.io.in.valid, false.B)
     step(10)
@@ -52,7 +52,7 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
     poke(c.io.in.bits.switch, false.B)
     poke(c.io.in.valid, false.B)
     poke(c.io.in.bits.data, 0.U)
-    poke(c.io.out.ready, false.B)
+    poke(c.io.out.data.ready, false.B)
 
     step(2)
 
@@ -65,11 +65,11 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
 
     //PREAMBLE
     for (j <- 0 to 7) {
-      poke(c.io.out.ready, true.B)
+      poke(c.io.out.data.ready, true.B)
       poke(c.io.in.bits.data, sw_out(0).U(j)) //note: U to B
-      expect(c.io.out.valid, false.B)
+      expect(c.io.out.data.valid, false.B)
       step(1)
-      poke(c.io.out.ready, false.B)
+      poke(c.io.out.data.ready, false.B)
     }
     poke(c.io.in.valid, false.B)
     step(10)
@@ -79,32 +79,32 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
       sendBits(sw_out(j + 1), packetInt(j), 8)
     }
 
-    expect(c.io.out.bits.flag_aa.bits, true.B)
-    expect(c.io.out.bits.flag_aa.valid, true.B)
+    expect(c.io.out.flag_aa.bits, true.B)
+    expect(c.io.out.flag_aa.valid, true.B)
 
     // CRC
     for (j <- 0 to 23) {
       poke(c.io.in.bits.data, sw_out(len + 1 + j / 8).U(j % 8))
       poke(c.io.in.valid, true.B)
-      poke(c.io.out.ready, true.B)
+      poke(c.io.out.data.ready, true.B)
       if (j % 8 == 7) {
         step(1)
         poke(c.io.in.valid, false.B)
-        expect(c.io.out.valid, true.B)
+        expect(c.io.out.data.valid, true.B)
       } else {
-        expect(c.io.out.valid, false.B)
+        expect(c.io.out.data.valid, false.B)
       }
       step(1)
-      poke(c.io.out.ready, false.B)
+      poke(c.io.out.data.ready, false.B)
     }
     poke(c.io.in.valid, false.B)
     step(10)
 
-    expect(c.io.out.bits.flag_crc.bits, true.B)
-    expect(c.io.out.bits.flag_crc.valid, true.B)
-    expect(c.io.out.bits.done, true.B)
+    expect(c.io.out.flag_crc.bits, true.B)
+    expect(c.io.out.flag_crc.valid, true.B)
+    expect(c.io.out.done, true.B)
 
-    poke(c.io.out.ready, true.B)
+    poke(c.io.out.data.ready, true.B)
     step(10)
   }
 }
