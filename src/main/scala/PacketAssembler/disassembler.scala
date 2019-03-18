@@ -31,10 +31,10 @@ object PDAInputBundle {
   * @param done boolean value that indicates the end of current packet
   */
 class PDAOutputBundle extends Bundle {
-  val data = Output(UInt(8.W)) //decouple(sink): data, push, full
-  val length = Output(UInt(8.W))
-  val flag_aa = Output(Valid(Bool()))
-  val flag_crc = Output(Valid(Bool()))
+  val data = Decoupled(UInt(8.W)) //decouple(sink): data, push, full
+  val length = Decoupled(UInt(8.W))
+  val flag_aa = Decoupled(Bool())
+  val flag_crc = Decoupled(Bool())
   val done = Output(Bool())
 
   override def cloneType: this.type = PDAOutputBundle().asInstanceOf[this.type]
@@ -47,7 +47,7 @@ object PDAOutputBundle {
 class PacketDisAssemblerIO extends Bundle {
   val in = Flipped(Decoupled(PDAInputBundle()))
   val param = Input(ParameterBundle())
-  val out = Decoupled(PDAOutputBundle())
+  val out = new PDAOutputBundle
 
   override def cloneType: this.type =
     PacketDisAssemblerIO().asInstanceOf[this.type]
@@ -120,6 +120,7 @@ class PacketDisAssembler extends Module {
 
   //packet status
   val pdu_length = RegInit(0.U(8.W))
+  val pdu_length_valid = RegInit(false.B)
   val done = RegInit(false.B)
   val flag_aa = RegInit(true.B)
   val flag_aa_valid = RegInit(false.B)
@@ -134,9 +135,9 @@ class PacketDisAssembler extends Module {
 
   //Handshake Parameters
   val out_valid = RegInit(false.B)
-  val out_fire = io.out.ready & io.out.valid
+  val out_fire = io.out.data.ready && io.out.data.valid
   val in_ready = RegInit(Bool(), false.B)
-  val in_fire = io.in.ready & io.in.valid
+  val in_fire = io.in.ready && io.in.valid
 
   //data registers
 
@@ -158,9 +159,9 @@ class PacketDisAssembler extends Module {
 
   //output function
   when (state === idle || state === preamble) {
-    io.out.bits.data := 0.U
+    io.out.data.bits := 0.U
   } .otherwise { //aa, pdu_header, pdu_payload, crc
-    io.out.bits.data := data.asUInt
+    io.out.data.bits := data.asUInt
   }
 
   when (state === wait_dma) {
@@ -169,14 +170,15 @@ class PacketDisAssembler extends Module {
     done := false.B
   }
 
-  io.out.bits.length := pdu_length
-  io.out.bits.flag_aa.bits := flag_aa
-  io.out.bits.flag_aa.valid := flag_aa_valid
-  io.out.bits.flag_crc.bits := flag_crc
-  io.out.bits.flag_crc.valid := flag_crc_valid
-  io.out.bits.done := done
+  io.out.length.bits := pdu_length
+  io.out.length.valid := pdu_length_valid
+  io.out.flag_aa.bits := flag_aa
+  io.out.flag_aa.valid := flag_aa_valid
+  io.out.flag_crc.bits := flag_crc
+  io.out.flag_crc.valid := flag_crc_valid
+  io.out.done := done
 
-  io.out.valid := out_valid
+  io.out.data.valid := out_valid
   io.in.ready := in_ready
 
   switch(state) {
@@ -259,7 +261,7 @@ class PacketDisAssembler extends Module {
       counter_byte := counterByteOut
     }
     is(wait_dma) {
-      when (io.out.ready === true.B) {
+      when (io.out.data.ready === true.B) {
         state := idle
       } .otherwise {
         state := wait_dma
@@ -270,8 +272,10 @@ class PacketDisAssembler extends Module {
   //PDU_Length
   when (state === pdu_header && counter === 1.U && out_fire === true.B) {
     pdu_length := data.asUInt
-  } .otherwise {
-    //do nothing: registers preserve value//note
+    pdu_length_valid := true.B
+  } .elsewhen (state === idle) {
+    pdu_length := 0.U
+    pdu_length_valid := false.B
   }
 
   //Flag_aa
