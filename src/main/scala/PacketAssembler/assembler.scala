@@ -181,8 +181,7 @@ class PacketAssembler extends Module {
   }
 
   //State Transition with counter updates
-  switch(state) {
-    is(idle) {
+  when(state === idle) {
       when (io.in.bits.trigger === true.B && io.in.valid) {
         state := preamble
         counter := 0.U
@@ -190,22 +189,19 @@ class PacketAssembler extends Module {
       } .otherwise {
         state := idle
       }
-    }
-    is(preamble) {
+    }.elsewhen(state === preamble) {
       val (stateOut, counterOut, counterByteOut) =
         stateUpdate(preamble, aa, 1.U, counter, counter_byte, out_fire)
       state := stateOut
       counter := counterOut
       counter_byte := counterByteOut
-    }
-    is(aa) {
+    }.elsewhen(state === aa) {
       val (stateOut, counterOut, counterByteOut) =
         stateUpdate(aa, pdu_header, 4.U, counter, counter_byte, out_fire)
       state := stateOut
       counter := counterOut
       counter_byte := counterByteOut
-    }
-    is(pdu_header) {
+    }.elsewhen(state === pdu_header) {
       val (stateOut, counterOut, counterByteOut) = stateUpdate(
         pdu_header,
         pdu_payload,
@@ -217,8 +213,7 @@ class PacketAssembler extends Module {
       state := stateOut
       counter := counterOut
       counter_byte := counterByteOut
-    }
-    is(pdu_payload) {
+    }.elsewhen(state === pdu_payload) {
       val (stateOut, counterOut, counterByteOut) = stateUpdate(
         pdu_payload,
         crc,
@@ -230,15 +225,15 @@ class PacketAssembler extends Module {
       state := stateOut
       counter := counterOut
       counter_byte := counterByteOut
-    }
-    is(crc) {
+    }.elsewhen(state === crc) {
       val (stateOut, counterOut, counterByteOut) =
         stateUpdate(crc, idle, 3.U, counter, counter_byte, out_fire)
       state := stateOut
       counter := counterOut
       counter_byte := counterByteOut
+    }.otherwise {
+	state := idle
     }
-  }
   //PDU_Length
   when (state === pdu_header && counter === 1.U) {
     pdu_length := data

@@ -181,15 +181,13 @@ class PacketDisAssembler extends Module {
   io.out.data.valid := out_valid
   io.in.ready := in_ready
 
-  switch(state) {
-    is(idle) {
+  when(state === idle) {
       when (io.in.bits.switch === true.B && io.in.valid) { //note: switch usage
         state := preamble
       } .otherwise {
         state := idle
       }
-    }
-    is(preamble) {
+    }.elsewhen(state === preamble) {
       val cor = ~(data.asUInt ^ preamble01)
       val ones = PopCount(cor)
       when (ones >= threshold) {
@@ -199,8 +197,7 @@ class PacketDisAssembler extends Module {
       } .otherwise {
         state := preamble
       }
-    }
-    is(aa) {
+    }.elsewhen(state === aa) {
       val (stateOut, counterOut, counterByteOut) =
         stateUpdate(
           aa,
@@ -214,8 +211,7 @@ class PacketDisAssembler extends Module {
       state := stateOut
       counter := counterOut
       counter_byte := counterByteOut
-    }
-    is(pdu_header) {
+    }.elsewhen(state === pdu_header) {
       val (stateOut, counterOut, counterByteOut) =
         stateUpdate(
           pdu_header,
@@ -229,8 +225,7 @@ class PacketDisAssembler extends Module {
       state := stateOut
       counter := counterOut
       counter_byte := counterByteOut
-    }
-    is(pdu_payload) {
+    }.elsewhen(state === pdu_payload) {
       val (stateOut, counterOut, counterByteOut) =
         stateUpdate(
           pdu_payload,
@@ -244,8 +239,7 @@ class PacketDisAssembler extends Module {
       state := stateOut
       counter := counterOut
       counter_byte := counterByteOut
-    }
-    is(crc) {
+    }.elsewhen(state === crc) {
       val (stateOut, counterOut, counterByteOut) =
         stateUpdate(
           crc,
@@ -259,15 +253,15 @@ class PacketDisAssembler extends Module {
       state := stateOut
       counter := counterOut
       counter_byte := counterByteOut
-    }
-    is(wait_dma) {
+    }.elsewhen(state === wait_dma) {
       when (io.out.data.ready === true.B) {
         state := idle
       } .otherwise {
         state := wait_dma
       }
+    }.otherwise{
+	state := idle
     }
-  }
 
   //PDU_Length
   when (state === pdu_header && counter === 1.U && out_fire === true.B) {
