@@ -140,14 +140,14 @@ class PacketAssembler extends Module {
   val data = RegInit(0.U(8.W))
 
   //CRC
-  val crc_reset = io.in.bits.trigger && io.in.valid
+  val crc_reset = io.in.bits.trigger
   val crc_data = Wire(UInt(1.W))
   val crc_valid = Wire(Bool())
   val crc_result = Wire(UInt(24.W))
   val crc_seed = Wire(UInt(24.W))
 
   //whitening
-  val white_reset = io.in.bits.trigger && io.in.valid
+  val white_reset = io.in.bits.trigger
   val white_data = Wire(UInt(1.W))
   val white_valid = Wire(Bool())
   val white_result = Wire(UInt(1.W))
@@ -182,7 +182,7 @@ class PacketAssembler extends Module {
 
   //State Transition with counter updates
   when(state === idle) {
-      when (io.in.bits.trigger === true.B && io.in.valid) {
+      when (io.in.bits.trigger === true.B) {
         state := preamble
         counter := 0.U
         counter_byte := 0.U
