@@ -182,11 +182,7 @@ class PacketDisAssembler extends Module {
   io.in.data.ready := in_ready
 
   when(state === idle) {
-      when (io.in.switch === true.B) { //note: switch usage
-        state := preamble
-      } .otherwise {
-        state := idle
-      }
+      state := Mux(io.in.switch, preamble, idle)
     }.elsewhen(state === preamble) {
       val cor = ~(data.asUInt ^ preamble01)
       val ones = PopCount(cor)

@@ -182,7 +182,7 @@ class PacketAssembler extends Module {
 
   //State Transition with counter updates
   when(state === idle) {
-      when (io.in.trigger === true.B) {
+      when (io.in.trigger) {
         state := preamble
         counter := 0.U
         counter_byte := 0.U
