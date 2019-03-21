@@ -182,7 +182,7 @@ class PacketDisAssembler extends Module {
   io.in.data.ready := in_ready
 
   when(state === idle) {
-      when (io.in.switch === true.B && io.in.data.valid) { //note: switch usage
+      when (io.in.switch === true.B) { //note: switch usage
         state := preamble
       } .otherwise {
         state := idle
