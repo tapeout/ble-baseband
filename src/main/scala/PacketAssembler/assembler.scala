@@ -8,11 +8,11 @@ import Whitening._
 /**
   * PAInputBundle: input of packet assembler
   * @param trigger indicates the start of a new packet
-  * @param data 8-bit input of data
+  * @param data 8-bit decoupled input of data
   */
 class PAInputBundle extends Bundle {
-  val trigger = Output(Bool())
-  val data = Output(UInt(8.W))
+  val trigger = Input(Bool())
+  val data = Flipped(Decoupled(UInt(8.W)))
 
   override def cloneType: this.type = PAInputBundle().asInstanceOf[this.type]
 }
@@ -41,11 +41,11 @@ object ParameterBundle {
 
 /**
   * PAOutputBundle: output of packet assembler
-  * @param data 1-bit output data
+  * @param data 1-bit decoupled output data
   * @param done boolean value that indicates the end of current packet
   */
 class PAOutputBundle extends Bundle {
-  val data = Output(UInt(1.W))
+  val data = Decoupled(UInt(1.W))
   val done = Output(Bool())
 
   override def cloneType: this.type = PAOutputBundle().asInstanceOf[this.type]
@@ -56,9 +56,9 @@ object PAOutputBundle {
 }
 
 class PacketAssemblerIO extends Bundle {
-  val in = Flipped(Decoupled(PAInputBundle()))
+  val in = new PAInputBundle
   val param = Input(ParameterBundle())
-  val out = Decoupled(PAOutputBundle())
+  val out = new PAOutputBundle
 
   override def cloneType: this.type =
     PacketAssemblerIO().asInstanceOf[this.type]
@@ -133,21 +133,21 @@ class PacketAssembler extends Module {
   //Handshake parameters
   val in_ready = RegInit(false.B)
   val out_valid = RegInit(false.B)
-  val in_fire = io.in.ready && io.in.valid
-  val out_fire = io.out.ready && io.out.valid
+  val in_fire = io.in.data.ready && io.in.data.valid
+  val out_fire = io.out.data.ready && io.out.data.valid
 
   //data registers
   val data = RegInit(0.U(8.W))
 
   //CRC
-  val crc_reset = io.in.bits.trigger
+  val crc_reset = io.in.trigger
   val crc_data = Wire(UInt(1.W))
   val crc_valid = Wire(Bool())
   val crc_result = Wire(UInt(24.W))
   val crc_seed = Wire(UInt(24.W))
 
   //whitening
-  val white_reset = io.in.bits.trigger
+  val white_reset = io.in.trigger
   val white_data = Wire(UInt(1.W))
   val white_valid = Wire(Bool())
   val white_result = Wire(UInt(1.W))
@@ -160,29 +160,29 @@ class PacketAssembler extends Module {
   white_seed := io.param.whiteSeed
 
   //decouple assignments
-  io.in.ready := in_ready
-  io.out.valid := out_valid
+  io.in.data.ready := in_ready
+  io.out.data.valid := out_valid
 
   //output bits
   when (state === idle) {
-    io.out.bits.data := 0.U
+    io.out.data.bits := 0.U
   } .otherwise {
     when (state === pdu_header || state === pdu_payload || state === crc) {
-      io.out.bits.data := white_result
+      io.out.data.bits := white_result
     } .otherwise { //PREAMBLE, aa
-      io.out.bits.data := data(counter_byte)
+      io.out.data.bits := data(counter_byte)
     }
   }
 
   when (state === crc && counter === 2.U && counter_byte === 7.U && out_fire) { //end of the packet
-    io.out.bits.done := true.B
+    io.out.done := true.B
   } .otherwise {
-    io.out.bits.done := false.B
+    io.out.done := false.B
   }
 
   //State Transition with counter updates
   when(state === idle) {
-      when (io.in.bits.trigger === true.B) {
+      when (io.in.trigger === true.B) {
         state := preamble
         counter := 0.U
         counter_byte := 0.U
@@ -273,7 +273,7 @@ class PacketAssembler extends Module {
   } .elsewhen (state === preamble) {
       when (counter === 0.U && counter_byte === 7.U && out_fire) {
         out_valid := false.B //special case at the end of PREAMBLE: aa starts with invalid
-      } .elsewhen (io.in.valid) {
+      } .elsewhen (io.in.data.valid) {
         out_valid := true.B
       }
     }
@@ -295,13 +295,13 @@ class PacketAssembler extends Module {
   //data
   when (state === aa || state === pdu_header || state === pdu_payload) {
     when (in_fire) {
-      data := io.in.bits.data
+      data := io.in.data.bits
     } .otherwise {
       data := data
     }
   } .elsewhen (state === preamble) {
-      when (io.in.valid) {
-        when (io.in.bits.data(0) === 0.U) {
+      when (io.in.data.valid) {
+        when (io.in.data.bits(0) === 0.U) {
           data := preamble0
         } .otherwise {
           data := preamble1

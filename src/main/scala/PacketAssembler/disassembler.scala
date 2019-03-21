@@ -12,8 +12,8 @@ import Whitening._
   * @param data 1-bit input of data
   */
 class PDAInputBundle extends Bundle {
-  val switch = Output(Bool())
-  val data = Output(UInt(1.W)) //decouple(source): data, pop, empty
+  val switch = Input(Bool())
+  val data = Flipped(Decoupled(UInt(1.W))) //decouple(source): data, pop, empty
 
   override def cloneType: this.type = PDAInputBundle().asInstanceOf[this.type]
 }
@@ -45,7 +45,7 @@ object PDAOutputBundle {
 }
 
 class PacketDisAssemblerIO extends Bundle {
-  val in = Flipped(Decoupled(PDAInputBundle()))
+  val in = new PDAInputBundle
   val param = Input(ParameterBundle())
   val out = new PDAOutputBundle
 
@@ -137,7 +137,7 @@ class PacketDisAssembler extends Module {
   val out_valid = RegInit(false.B)
   val out_fire = io.out.data.ready && io.out.data.valid
   val in_ready = RegInit(Bool(), false.B)
-  val in_fire = io.in.ready && io.in.valid
+  val in_fire = io.in.data.ready && io.in.data.valid
 
   //data registers
 
@@ -179,10 +179,10 @@ class PacketDisAssembler extends Module {
   io.out.done := done
 
   io.out.data.valid := out_valid
-  io.in.ready := in_ready
+  io.in.data.ready := in_ready
 
   when(state === idle) {
-      when (io.in.bits.switch === true.B && io.in.valid) { //note: switch usage
+      when (io.in.switch === true.B && io.in.data.valid) { //note: switch usage
         state := preamble
       } .otherwise {
         state := idle
@@ -355,7 +355,7 @@ class PacketDisAssembler extends Module {
   } .elsewhen (state === preamble) {
       when (in_fire === true.B) {
         //data(7) := io.in.bits.data.toBools //note: subword assignment
-        when (io.in.bits.data === 0.U) {
+        when (io.in.data.bits === 0.U) {
           data(7) := false.B
         } .otherwise {
           data(7) := true.B
@@ -368,7 +368,7 @@ class PacketDisAssembler extends Module {
     .elsewhen (state === aa) {
       when (in_fire === true.B) {
         //data(counter_byte) := io.in.bits.data.toBools
-        when (io.in.bits.data === 0.U) {
+        when (io.in.data.bits === 0.U) {
           data(counter_byte) := false.B
         } .otherwise {
           data(counter_byte) := true.B
@@ -392,7 +392,7 @@ class PacketDisAssembler extends Module {
 
   //dewhitening
   when (state === pdu_header || state === pdu_payload || state === crc) { //check corner cases
-    dewhite_data := io.in.bits.data
+    dewhite_data := io.in.data.bits
     dewhite_valid := in_fire
   } .otherwise {
     dewhite_data := 0.U
