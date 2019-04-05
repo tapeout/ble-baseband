@@ -250,7 +250,7 @@ class PacketDisAssembler extends Module {
       counter := counterOut
       counter_byte := counterByteOut
     }.elsewhen(state === wait_dma) {
-      when (io.out.data.ready === true.B) {
+      when (io.out.length.ready === true.B && io.out.flag_aa.ready === true.B && io.out.flag_crc.ready === true.B) {
         state := idle
       } .otherwise {
         state := wait_dma

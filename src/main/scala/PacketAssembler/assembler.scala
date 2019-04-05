@@ -260,7 +260,7 @@ class PacketAssembler extends Module {
     ) {
       in_ready := true.B //special case at the end of PREAMBLE: aa starts with ready
     } .elsewhen (state === idle) {
-        in_ready := true.B
+        in_ready := false.B
       }
       .otherwise {
         in_ready := false.B
