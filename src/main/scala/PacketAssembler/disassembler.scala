@@ -121,11 +121,14 @@ class PacketDisAssembler extends Module {
   //packet status
   val pdu_length = RegInit(0.U(8.W))
   val pdu_length_valid = RegInit(false.B)
+  val pdu_length_ready = RegInit(false.B)
   val done = RegInit(false.B)
   val flag_aa = RegInit(true.B)
   val flag_aa_valid = RegInit(false.B)
+  val flag_aa_ready = RegInit(false.B)
   val flag_crc = RegInit(true.B)
   val flag_crc_valid = RegInit(false.B)
+  val flag_crc_ready = RegInit(false.B)
 
   //Preamble
   val preamble0 = "b10101010".U
@@ -172,10 +175,13 @@ class PacketDisAssembler extends Module {
 
   io.out.length.bits := pdu_length
   io.out.length.valid := pdu_length_valid
+  pdu_length_ready := io.out.length.ready
   io.out.flag_aa.bits := flag_aa
   io.out.flag_aa.valid := flag_aa_valid
+  flag_aa_ready := io.out.flag_aa.ready
   io.out.flag_crc.bits := flag_crc
   io.out.flag_crc.valid := flag_crc_valid
+  flag_crc_ready := io.out.flag_crc.ready
   io.out.done := done
 
   io.out.data.valid := out_valid
@@ -250,7 +256,7 @@ class PacketDisAssembler extends Module {
       counter := counterOut
       counter_byte := counterByteOut
     }.elsewhen(state === wait_dma) {
-      when (io.out.length.ready === true.B && io.out.flag_aa.ready === true.B && io.out.flag_crc.ready === true.B) {
+      when (pdu_length_ready === true.B && flag_aa_ready === true.B && flag_crc_ready === true.B) {
         state := idle
       } .otherwise {
         state := wait_dma
