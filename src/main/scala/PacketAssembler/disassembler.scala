@@ -123,17 +123,17 @@ class PacketDisAssembler extends Module {
 
   val pdu_length = RegInit(0.U(8.W))
   val pdu_length_valid = RegInit(false.B)
-  val pdu_length_ready = RegInit(false.B)
+  val pdu_length_ready = Wire(Bool())
   val pdu_length_fire = RegInit(false.B)
 
   val flag_aa = RegInit(true.B)
   val flag_aa_valid = RegInit(false.B)
-  val flag_aa_ready = RegInit(false.B)
+  val flag_aa_ready = Wire(Bool())
   val flag_aa_fire = RegInit(false.B)
 
   val flag_crc = RegInit(true.B)
   val flag_crc_valid = RegInit(false.B)
-  val flag_crc_ready = RegInit(false.B)
+  val flag_crc_ready = Wire(Bool())
   val flag_crc_fire = RegInit(false.B)
 
   //Preamble
@@ -186,12 +186,15 @@ class PacketDisAssembler extends Module {
   }.otherwise{
     when(pdu_length_valid === true.B && pdu_length_ready === true.B){
       pdu_length_fire := true.B
+      pdu_length_valid := false.B
     }
     when(flag_aa_valid === true.B && flag_aa_ready === true.B){
       flag_aa_fire := true.B
+      flag_aa_valid := false.B
     }
     when(flag_crc_valid === true.B && flag_crc_ready === true.B){
       flag_crc_fire := true.B
+      flag_crc_valid := false.B
     }
   }
 
