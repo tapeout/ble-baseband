@@ -104,8 +104,14 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
     expect(c.io.out.flag_crc.valid, true.B)
     expect(c.io.out.done, true.B)
 
-    poke(c.io.out.data.ready, true.B)
+    poke(c.io.out.flag_crc.ready, true.B)
+    poke(c.io.out.flag_aa.ready, true.B)
+    poke(c.io.out.length.ready, true.B)
     step(10)
+
+    poke(c.io.out.flag_crc.ready, false.B)
+    poke(c.io.out.flag_aa.ready, false.B)
+    poke(c.io.out.length.ready, false.B)
   }
 }
 
