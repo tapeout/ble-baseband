@@ -47,6 +47,7 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
     poke(c.io.param.whiteSeed, "b1100101".U)
     val aa = BigInt(packet(3) + packet(2) + packet(1) + packet(0), 2)
     poke(c.io.param.aaDisassembler, aa.U)
+    poke(c.io.param.thresDisassembler, 7.U)
 
     //initialize
     poke(c.io.in.switch, false.B)
