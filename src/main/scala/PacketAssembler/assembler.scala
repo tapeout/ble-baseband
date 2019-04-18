@@ -31,7 +31,7 @@ class ParameterBundle extends Bundle {
   val crcSeed = UInt(24.W)
   val whiteSeed = UInt(7.W)
   val aaDisassembler = UInt(32.W)
-
+  val thresDisassembler = UInt(3.W)
   override def cloneType: this.type = ParameterBundle().asInstanceOf[this.type]
 }
 

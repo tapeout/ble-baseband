@@ -217,7 +217,7 @@ class PacketDisAssembler extends Module {
     }.elsewhen(state === preamble) {
       val cor = ~(data.asUInt ^ preamble01)
       val ones = PopCount(cor)
-      when (ones >= threshold) {
+      when (ones > io.param.thresDisassembler) {
         state := aa
         counter := 0.U
         counter_byte := 0.U
