@@ -129,6 +129,8 @@ class PacketAssembler extends Module {
   //Preamble & Pre-preamble
   val preamble0 = "b10101010".U //flipped preamble; start with least significant bit
   val preamble1 = "b01010101".U
+  val prepreamble0 = "b00001111".U
+  val prepreamble1 = "b11110000".U
 
   //Handshake parameters
   val in_ready = RegInit(false.B)
@@ -191,7 +193,7 @@ class PacketAssembler extends Module {
       }
     }.elsewhen(state === preamble) {
       val (stateOut, counterOut, counterByteOut) =
-        stateUpdate(preamble, aa, 1.U, counter, counter_byte, out_fire)
+        stateUpdate(preamble, aa, 2.U, counter, counter_byte, out_fire)
       state := stateOut
       counter := counterOut
       counter_byte := counterByteOut
@@ -256,7 +258,7 @@ class PacketAssembler extends Module {
       .otherwise {}
   } .otherwise { //IDLE, PREAMBLE, CRC
     when (
-      state === preamble && counter === 0.U && counter_byte === 7.U && out_fire
+      state === preamble && counter === 1.U && counter_byte === 7.U && out_fire
     ) {
       in_ready := true.B //special case at the end of PREAMBLE: aa starts with ready
     }
@@ -269,7 +271,7 @@ class PacketAssembler extends Module {
   when (state === idle) {
     out_valid := false.B
   } .elsewhen (state === preamble) {
-      when (counter === 0.U && counter_byte === 7.U && out_fire) {
+      when (counter === 1.U && counter_byte === 7.U && out_fire) {
         out_valid := false.B //special case at the end of PREAMBLE: aa starts with invalid
       } .elsewhen (io.in.data.valid) {
         out_valid := true.B
@@ -299,10 +301,10 @@ class PacketAssembler extends Module {
     }
   } .elsewhen (state === preamble) {
       when (io.in.data.valid) {
-        when (io.in.data.bits(0) === 0.U) {
-          data := preamble0
-        } .otherwise {
-          data := preamble1
+        when(counter === 0.U){
+          data := Mux(io.in.data.bits(0) === 0.U, prepreamble0, prepreamble1)
+        }.otherwise {
+          data := Mux(io.in.data.bits(0) === 0.U, preamble0, preamble1)
         }
       } .otherwise {
         data := data

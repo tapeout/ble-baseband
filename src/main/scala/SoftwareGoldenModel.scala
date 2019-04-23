@@ -149,16 +149,19 @@ object SoftwareGoldenModel {
   def pa_sw(packetIn: Array[String]): (Array[String]) = {
 
     val len = packetIn.size
-    val buf = new Array[String](len + 4)
+    val buf = new Array[String](len + 5)
     val preamble =
       if (packetIn(0).slice(7, 8) == "0") "10101010" else "01010101"
+    val prepreamble = 
+      if (packetIn(0).slice(7, 8) == "0") "00001111" else "11110000"
     var crc_lfsr = "010101010101010101010101".reverse
     var white_lfsr = "1100101"
 
-    buf(0) = preamble
+    buf(0) = prepreamble
+    buf(1) = preamble
     for (i <- 0 to len + 2) {
       if (i < 4) {
-        buf(i + 1) = packetIn(i)
+        buf(i + 2) = packetIn(i)
       } else {
         var stringOut: String = ""
         var bitIn: Int = 0
@@ -176,7 +179,7 @@ object SoftwareGoldenModel {
           white_lfsr = init_res._2
           stringOut = stringOut + bitOut.toString
         }
-        buf(i + 1) = stringOut.reverse
+        buf(i + 2) = stringOut.reverse
       }
     }
     return buf
