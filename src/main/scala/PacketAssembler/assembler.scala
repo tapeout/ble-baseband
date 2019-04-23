@@ -271,7 +271,7 @@ class PacketAssembler extends Module {
   when (state === idle) {
     out_valid := false.B
   } .elsewhen (state === preamble) {
-      when (counter === 1.U && counter_byte === 7.U && out_fire) {
+      when (counter_byte === 7.U && out_fire) {
         out_valid := false.B //special case at the end of PREAMBLE: aa starts with invalid
       } .elsewhen (io.in.data.valid) {
         out_valid := true.B
