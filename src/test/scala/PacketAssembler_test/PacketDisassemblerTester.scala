@@ -67,17 +67,6 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
     //PREAMBLE
     for (j <- 0 to 7) {
       poke(c.io.out.data.ready, true.B)
-      poke(c.io.in.data.bits, sw_out(0).U(j)) //note: U to B
-      expect(c.io.out.data.valid, false.B)
-      step(1)
-      poke(c.io.out.data.ready, false.B)
-    }
-    poke(c.io.in.data.valid, false.B)
-    step(10)
-    poke(c.io.in.data.valid, true.B)
-
-    for (j <- 0 to 7) {
-      poke(c.io.out.data.ready, true.B)
       poke(c.io.in.data.bits, sw_out(1).U(j)) //note: U to B
       expect(c.io.out.data.valid, false.B)
       step(1)
