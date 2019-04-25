@@ -43,6 +43,7 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
     //throughout packet
     poke(c.io.param.crcSeed, "b010101010101010101010101".U)
     poke(c.io.param.whiteSeed, "b1100101".U)
+    poke(c.io.param.prepreamble, true.B)
 
     //initialize
     poke(c.io.in.trigger, false.B)
@@ -60,18 +61,19 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
 
     //Preamble
     sendBits(packetInt(0), sw_out(0), 8)
+    sendBits(packetInt(0), sw_out(1), 8)
 
     //AA and PDU
     for (j <- 0 to len - 1) {
-      sendBits(packetInt(j), sw_out(j + 1), 8)
+      sendBits(packetInt(j), sw_out(j + 2), 8)
     }
 
     //CRC
     for (j <- 0 to 23) {
       step(5)
       poke(c.io.out.data.ready, true.B)
-      expect(c.io.out.data.bits, sw_out(len + 1 + j / 8).U(j % 8)) //note
-      //println(s"j="+j+s"\n${peek(c.io.out.data.bits)}\t${peek(sw_out(len + 1 + j / 8).U(j % 8))}")
+      expect(c.io.out.data.bits, sw_out(len + 2 + j / 8).U(j % 8)) //note
+      //println(s"j="+j+s"\n${peek(c.io.out.data.bits)}\t${peek(sw_out(len + 2 + j / 8).U(j % 8))}")
       step(1)
       poke(c.io.out.data.ready, false.B)
     }

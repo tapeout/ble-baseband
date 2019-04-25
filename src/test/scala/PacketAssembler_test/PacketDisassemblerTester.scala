@@ -65,9 +65,22 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
     poke(c.io.in.switch, false.B)
 
     //PREAMBLE
+    if(i % 2 == 0){
+      for (j <- 0 to 7) {
+        poke(c.io.out.data.ready, true.B)
+        poke(c.io.in.data.bits, sw_out(0).U(j)) //note: U to B
+        expect(c.io.out.data.valid, false.B)
+        step(1)
+        poke(c.io.out.data.ready, false.B)
+      }
+      poke(c.io.in.data.valid, false.B)
+      step(10)
+      poke(c.io.in.data.valid, true.B)
+    }
+
     for (j <- 0 to 7) {
       poke(c.io.out.data.ready, true.B)
-      poke(c.io.in.data.bits, sw_out(0).U(j)) //note: U to B
+      poke(c.io.in.data.bits, sw_out(1).U(j)) //note: U to B
       expect(c.io.out.data.valid, false.B)
       step(1)
       poke(c.io.out.data.ready, false.B)
@@ -77,7 +90,7 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
 
     //AA and PDU
     for (j <- 0 to len - 1) {
-      sendBits(sw_out(j + 1), packetInt(j), 8)
+      sendBits(sw_out(j + 2), packetInt(j), 8)
     }
 
     expect(c.io.out.flag_aa.bits, true.B)
@@ -85,7 +98,7 @@ class PacketDisAssemblerTest(c: PacketDisAssembler) extends PeekPokeTester(c) {
 
     // CRC
     for (j <- 0 to 23) {
-      poke(c.io.in.data.bits, sw_out(len + 1 + j / 8).U(j % 8))
+      poke(c.io.in.data.bits, sw_out(len + 2 + j / 8).U(j % 8))
       poke(c.io.in.data.valid, true.B)
       poke(c.io.out.data.ready, true.B)
       if (j % 8 == 7) {
