@@ -43,6 +43,7 @@ class PacketAssemblerTest(c: PacketAssembler) extends PeekPokeTester(c) {
     //throughout packet
     poke(c.io.param.crcSeed, "b010101010101010101010101".U)
     poke(c.io.param.whiteSeed, "b1100101".U)
+    poke(c.io.param.prepreamble, true.B)
 
     //initialize
     poke(c.io.in.trigger, false.B)

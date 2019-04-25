@@ -30,6 +30,7 @@ object PAInputBundle {
 class ParameterBundle extends Bundle {
   val crcSeed = UInt(24.W)
   val whiteSeed = UInt(7.W)
+  val prepreamble = Bool()
   val aaDisassembler = UInt(32.W)
   val thresDisassembler = UInt(3.W)
   override def cloneType: this.type = ParameterBundle().asInstanceOf[this.type]
@@ -302,7 +303,7 @@ class PacketAssembler extends Module {
   } .elsewhen (state === preamble) {
       when (io.in.data.valid) {
         when(counter === 0.U){
-          data := Mux(io.in.data.bits(0) === 0.U, prepreamble0, prepreamble1)
+          data := Mux(io.param.prepreamble, Mux(io.in.data.bits(0) === 0.U, prepreamble0, prepreamble1), 0.U)
         }.otherwise {
           data := Mux(io.in.data.bits(0) === 0.U, preamble0, preamble1)
         }
